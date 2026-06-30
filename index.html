@@ -43,8 +43,20 @@
     border-bottom: 0.5px solid var(--border);
   }
   .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .logo { font-size: 19px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+  .logo {
+    font-size: 19px; font-weight: 700; letter-spacing: -0.5px; color: var(--text);
+    cursor: pointer; background: none; border: none; padding: 0; font-family: inherit;
+  }
   .logo span { color: var(--accent); }
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .sync-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted); flex-shrink: 0; transition: background .2s;
+  }
+  .sync-dot.online { background: var(--green); }
+  .sync-dot.syncing { background: var(--accent); animation: pulse 1s infinite; }
+  .sync-dot.offline { background: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
   .back-btn {
     display: none; align-items: center; gap: 6px;
     background: none; border: none; color: var(--accent);
@@ -71,7 +83,7 @@
 
   .setup-card {
     background: var(--surface); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 24px 20px; margin-top: 32px;
+    border-radius: var(--radius); padding: 24px 20px; margin-top: 24px;
   }
   .setup-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
   .setup-card p { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
@@ -90,6 +102,7 @@
     border: 0.5px solid var(--border); margin-top: 8px;
   }
   .error-msg { color: var(--red); font-size: 13px; margin-top: 8px; display: none; }
+  .success-msg { color: var(--green); font-size: 13px; margin-top: 8px; display: none; }
 
   .section-title {
     font-size: 13px; font-weight: 600; color: var(--muted);
@@ -185,11 +198,21 @@
   }
   .mark-all-btn:active { background: var(--surface2); }
 
+  /* FIX: scrollable season tabs */
   .season-tabs {
-    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
-    margin-bottom: 14px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    display: flex; gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
   }
-  .season-tabs::-webkit-scrollbar { display: none; }
+  .season-tabs::-webkit-scrollbar { height: 5px; }
+  .season-tabs::-webkit-scrollbar-track { background: transparent; }
+  .season-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  .season-tabs::-webkit-scrollbar-thumb:hover { background: var(--muted); }
   .season-tab {
     background: var(--surface2); border: 0.5px solid var(--border);
     border-radius: 20px; color: var(--muted); font-size: 13px; font-weight: 500;
@@ -235,10 +258,10 @@
     background: var(--surface2); border: 0.5px solid var(--border);
     border-radius: 20px; padding: 10px 18px; font-size: 14px; font-weight: 500;
     z-index: 999; transition: transform .25s cubic-bezier(.34,1.56,.64,1); white-space: nowrap;
+    max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* PWA install banner */
   .install-banner {
     display: none; align-items: center; gap: 10px;
     background: var(--surface); border: 0.5px solid var(--accent);
@@ -258,24 +281,39 @@
   }
   .hide { display: none !important; }
   svg.check-icon { width: 14px; height: 14px; }
+
+  .settings-section { margin-bottom: 20px; }
+  .settings-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .settings-section p.hint { font-size: 13px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
 </style>
 </head>
 <body>
 
 <div class="toast" id="toast"></div>
 
-<!-- SETUP -->
-<div id="view-setup" class="view active" style="padding-top:32px">
+<!-- SETUP: Supabase config (alleen eerste keer per device) -->
+<div id="view-setup" class="view active" style="padding-top:24px">
   <div class="setup-card">
     <h2>Welkom bij serie.track 📺</h2>
-    <p>Om series te zoeken heb je een gratis TMDB API-sleutel nodig.<br>
-    Maak een account aan op <a href="https://www.themoviedb.org/signup" target="_blank">themoviedb.org</a>, ga naar <strong>Instellingen → API</strong> en kopieer je sleutel hieronder.</p>
-    <div class="input-group">
-      <label>TMDB API-sleutel</label>
-      <input type="password" id="api-key-input" placeholder="Plak hier je API-sleutel">
+    <p>Verbind eenmalig met je Supabase-database om je series overal te kunnen bijhouden. Heb je deze al ingesteld op een ander apparaat? Vul dezelfde gegevens in.</p>
+
+    <div class="settings-section">
+      <h3>Supabase Project URL</h3>
+      <div class="input-group">
+        <input type="text" id="sb-url-input" placeholder="https://xxxxx.supabase.co">
+      </div>
     </div>
-    <div class="error-msg" id="setup-error">Ongeldige sleutel. Controleer en probeer opnieuw.</div>
-    <button class="btn" id="save-key-btn">Opslaan en beginnen</button>
+    <div class="settings-section">
+      <h3>Supabase anon key</h3>
+      <div class="input-group">
+        <input type="password" id="sb-key-input" placeholder="eyJhbGci...">
+      </div>
+    </div>
+
+    <div class="error-msg" id="setup-error"></div>
+    <div class="success-msg" id="setup-success"></div>
+    <button class="btn" id="save-key-btn">Verbinden en beginnen</button>
+    <button class="btn secondary" id="skip-sync-btn">Skip — alleen lokaal opslaan</button>
   </div>
 </div>
 
@@ -283,8 +321,11 @@
 <div id="view-home" class="view">
   <div class="header" id="home-header">
     <div class="header-top">
-      <div class="logo">serie<span>.</span>track</div>
-      <button class="btn secondary" id="settings-btn" style="width:auto;padding:6px 12px;font-size:13px;margin:0">⚙ Sleutel</button>
+      <button class="logo" id="logo-btn">serie<span>.</span>track</button>
+      <div class="header-actions">
+        <div class="sync-dot" id="sync-dot" title="Sync status"></div>
+        <button class="btn secondary" id="settings-btn" style="width:auto;padding:6px 12px;font-size:13px;margin:0">⚙</button>
+      </div>
     </div>
     <div class="install-banner" id="install-banner">
       <p><strong>Voeg toe aan homescreen</strong><br>Gebruik als app op je telefoon</p>
@@ -328,33 +369,163 @@
   <div id="detail-content"></div>
 </div>
 
+<!-- SETTINGS (apart scherm voor wijzigen sync-gegevens) -->
+<div id="view-settings" class="view">
+  <div class="header">
+    <div class="header-top">
+      <button class="back-btn" id="settings-back-btn" style="display:flex">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+        Terug
+      </button>
+    </div>
+  </div>
+  <div style="padding:16px">
+    <div class="settings-section">
+      <h3>Sync-status</h3>
+      <p class="hint" id="settings-sync-status">Niet verbonden</p>
+    </div>
+    <div class="settings-section">
+      <h3>Supabase Project URL</h3>
+      <div class="input-group"><input type="text" id="settings-sb-url" placeholder="https://xxxxx.supabase.co"></div>
+    </div>
+    <div class="settings-section">
+      <h3>Supabase anon key</h3>
+      <div class="input-group"><input type="password" id="settings-sb-key" placeholder="eyJhbGci..."></div>
+    </div>
+    <div class="error-msg" id="settings-error"></div>
+    <div class="success-msg" id="settings-success"></div>
+    <button class="btn" id="settings-save-btn">Opslaan</button>
+    <button class="btn secondary" id="settings-disconnect-btn">Sync loskoppelen</button>
+  </div>
+</div>
+
 <script>
 const STORAGE_KEY = 'serietracker_data';
-const API_KEY_STORAGE = 'serietracker_apikey';
+const SB_URL_KEY = 'serietracker_sb_url';
+const SB_ANON_KEY = 'serietracker_sb_key';
+
+// TMDB key is ingebakken — gebruiker hoeft niets in te voeren
+const TMDB_API_KEY = 'f2ae2d1802817ae03f0e4a70f5a163b0';
 const TMDB_IMG = 'https://image.tmdb.org/t/p/';
-let apiKey = '';
+
 let myData = {};
 let currentSerieId = null;
 let currentSeason = 1;
 let searchTimeout = null;
 let seasonCache = {};
 let deferredPrompt = null;
+let sbUrl = '';
+let sbKey = '';
+let syncDebounce = null;
 
-// ── Persistence ──
-function save() {
+// ── Local persistence (cache/fallback) ──
+function saveLocal() {
   const out = {};
-  for (const [id, s] of Object.entries(myData)) {
-    out[id] = { ...s, watchedEps: [...s.watchedEps] };
-  }
+  for (const [id, s] of Object.entries(myData)) out[id] = { ...s, watchedEps: [...s.watchedEps] };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(out));
 }
-function load() {
+function loadLocal() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return;
   const parsed = JSON.parse(raw);
-  for (const [id, s] of Object.entries(parsed)) {
-    myData[id] = { ...s, watchedEps: new Set(s.watchedEps) };
+  for (const [id, s] of Object.entries(parsed)) myData[id] = { ...s, watchedEps: new Set(s.watchedEps) };
+}
+
+// ── Supabase sync ──
+function hasSync() { return !!(sbUrl && sbKey); }
+
+function setSyncStatus(state) {
+  // state: 'online' | 'syncing' | 'offline' | 'none'
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.classList.remove('online','syncing','offline');
+  if (state !== 'none') dot.classList.add(state);
+  const titles = { online: 'Gesynchroniseerd', syncing: 'Synchroniseren…', offline: 'Geen verbinding', none: 'Lokaal opslaan (geen sync)' };
+  dot.title = titles[state] || '';
+}
+
+async function sbFetch(path, opts = {}) {
+  const url = sbUrl.replace(/\/$/, '') + '/rest/v1' + path;
+  const headers = {
+    'apikey': sbKey,
+    'Authorization': 'Bearer ' + sbKey,
+    'Content-Type': 'application/json',
+    ...(opts.headers || {})
+  };
+  const r = await fetch(url, { ...opts, headers });
+  if (!r.ok) {
+    const txt = await r.text().catch(() => '');
+    throw new Error('Supabase ' + r.status + ': ' + txt);
   }
+  return r.status === 204 ? null : r.json();
+}
+
+async function testSupabaseConnection(url, key) {
+  const testUrl = url.replace(/\/$/, '') + '/rest/v1/series?select=id&limit=1';
+  const r = await fetch(testUrl, { headers: { 'apikey': key, 'Authorization': 'Bearer ' + key } });
+  if (!r.ok) throw new Error('Status ' + r.status);
+  return true;
+}
+
+async function pullFromCloud() {
+  if (!hasSync()) return;
+  setSyncStatus('syncing');
+  try {
+    const rows = await sbFetch('/series?select=*');
+    const cloudData = {};
+    for (const row of rows) {
+      cloudData[row.id] = {
+        id: row.id, name: row.name, poster: row.poster || '', backdrop: row.backdrop || '',
+        totalEps: row.total_eps || 0, seasons: row.seasons || 1,
+        watchedEps: new Set(row.watched_eps || [])
+      };
+    }
+    myData = cloudData;
+    saveLocal();
+    setSyncStatus('online');
+  } catch (e) {
+    console.error('Pull failed', e);
+    setSyncStatus('offline');
+  }
+}
+
+async function pushSerieToCloud(id) {
+  if (!hasSync()) return;
+  const s = myData[id];
+  if (!s) return;
+  setSyncStatus('syncing');
+  try {
+    await sbFetch('/series?on_conflict=id', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify([{
+        id: s.id, name: s.name, poster: s.poster, backdrop: s.backdrop,
+        total_eps: s.totalEps, seasons: s.seasons,
+        watched_eps: [...s.watchedEps], updated_at: new Date().toISOString()
+      }])
+    });
+    setSyncStatus('online');
+  } catch (e) {
+    console.error('Push failed', e);
+    setSyncStatus('offline');
+  }
+}
+
+async function deleteSerieFromCloud(id) {
+  if (!hasSync()) return;
+  try {
+    await sbFetch('/series?id=eq.' + encodeURIComponent(id), { method: 'DELETE' });
+  } catch (e) { console.error('Delete sync failed', e); }
+}
+
+function queueSync(id) {
+  clearTimeout(syncDebounce);
+  syncDebounce = setTimeout(() => pushSerieToCloud(id), 600);
+}
+
+function save(id) {
+  saveLocal();
+  if (id) queueSync(id);
 }
 
 // ── Views ──
@@ -363,6 +534,8 @@ function showView(name) {
   document.getElementById('view-' + name).classList.add('active');
   window.scrollTo(0, 0);
 }
+
+function goHome() { showView('home'); renderHomeGrid(); }
 
 // ── Toast ──
 let toastTimer;
@@ -377,7 +550,7 @@ function showToast(msg) {
 // ── TMDB ──
 async function tmdbFetch(path, params = {}) {
   const url = new URL('https://api.themoviedb.org/3' + path);
-  url.searchParams.set('api_key', apiKey);
+  url.searchParams.set('api_key', TMDB_API_KEY);
   url.searchParams.set('language', 'nl-NL');
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   const r = await fetch(url);
@@ -395,9 +568,7 @@ async function getSeasonEpisodes(serieId, season) {
   const data = await tmdbFetch('/tv/' + serieId + '/season/' + season);
   const eps = (data.episodes || []).map(e => ({
     id: serieId + '_s' + season + 'e' + e.episode_number,
-    num: e.episode_number,
-    name: e.name,
-    date: e.air_date
+    num: e.episode_number, name: e.name, date: e.air_date
   }));
   seasonCache[key] = eps;
   return eps;
@@ -465,9 +636,9 @@ async function addSerie(id, name, poster, backdrop) {
   if (btn) { btn.textContent = '…'; btn.disabled = true; }
   try {
     const d = await getSerieDetails(id);
-    myData[id] = { id, name, poster: poster || d.poster_path || '', backdrop: backdrop || d.backdrop_path || '',
+    myData[id] = { id: String(id), name, poster: poster || d.poster_path || '', backdrop: backdrop || d.backdrop_path || '',
       totalEps: d.number_of_episodes || 0, seasons: d.number_of_seasons || 1, watchedEps: new Set() };
-    save();
+    save(String(id));
     if (btn) { btn.textContent = 'Toegevoegd'; btn.classList.add('added'); btn.disabled = false; }
     showToast(`"${name}" toegevoegd!`);
   } catch(e) {
@@ -565,7 +736,7 @@ async function switchSeason(n) {
   currentSeason = n;
   document.querySelectorAll('.season-tab').forEach(t => t.classList.remove('active'));
   const tab = document.getElementById('stab-' + n);
-  if (tab) tab.classList.add('active');
+  if (tab) { tab.classList.add('active'); tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }
   await loadSeason(currentSerieId, n);
 }
 
@@ -574,7 +745,7 @@ function toggleEp(epId, el) {
   if (s.watchedEps.has(epId)) s.watchedEps.delete(epId);
   else s.watchedEps.add(epId);
   el.classList.toggle('watched', s.watchedEps.has(epId));
-  save(); updateProgress();
+  save(currentSerieId); updateProgress();
   const eps = seasonCache[currentSerieId + '_' + currentSeason] || [];
   refreshSeasonTab(currentSeason, currentSerieId, eps);
 }
@@ -584,7 +755,7 @@ async function markAllSeason() {
   const eps = await getSeasonEpisodes(currentSerieId, currentSeason);
   const allWatched = eps.every(ep => s.watchedEps.has(ep.id));
   for (const ep of eps) { if (allWatched) s.watchedEps.delete(ep.id); else s.watchedEps.add(ep.id); }
-  save(); updateProgress(); await loadSeason(currentSerieId, currentSeason);
+  save(currentSerieId); updateProgress(); await loadSeason(currentSerieId, currentSeason);
   showToast(allWatched ? 'Seizoen ongedaan gemaakt' : 'Seizoen als gezien gemarkeerd ✓');
 }
 
@@ -611,50 +782,130 @@ window.addEventListener('beforeinstallprompt', e => {
   if (banner) banner.classList.add('visible');
 });
 
+// ── Settings screen logic ──
+function openSettingsScreen() {
+  document.getElementById('settings-sb-url').value = sbUrl;
+  document.getElementById('settings-sb-key').value = sbKey;
+  document.getElementById('settings-sync-status').textContent = hasSync()
+    ? 'Verbonden met Supabase — je data synchroniseert automatisch.'
+    : 'Niet verbonden. Data wordt alleen lokaal op dit apparaat opgeslagen.';
+  document.getElementById('settings-error').style.display = 'none';
+  document.getElementById('settings-success').style.display = 'none';
+  showView('settings');
+}
+
 // ── Init ──
 function init() {
-  load();
-  apiKey = localStorage.getItem(API_KEY_STORAGE) || '';
-  if (apiKey) { showView('home'); renderHomeGrid(); } else { showView('setup'); }
+  loadLocal();
+  sbUrl = localStorage.getItem(SB_URL_KEY) || '';
+  sbKey = localStorage.getItem(SB_ANON_KEY) || '';
 
+  const everConfigured = localStorage.getItem('serietracker_configured') === '1';
+
+  if (everConfigured) {
+    showView('home');
+    renderHomeGrid();
+    if (hasSync()) { setSyncStatus('syncing'); pullFromCloud().then(renderHomeGrid); }
+    else setSyncStatus('none');
+  } else {
+    showView('setup');
+  }
+
+  // Setup: connect
   document.getElementById('save-key-btn').addEventListener('click', async () => {
-    const key = document.getElementById('api-key-input').value.trim();
+    const url = document.getElementById('sb-url-input').value.trim();
+    const key = document.getElementById('sb-key-input').value.trim();
     const err = document.getElementById('setup-error');
-    if (!key) { err.style.display='block'; err.textContent='Vul een sleutel in.'; return; }
-    err.style.display = 'none';
-    document.getElementById('save-key-btn').textContent = 'Controleren…';
-    apiKey = key;
+    const ok = document.getElementById('setup-success');
+    err.style.display = 'none'; ok.style.display = 'none';
+    if (!url || !key) { err.textContent = 'Vul beide velden in.'; err.style.display = 'block'; return; }
+    document.getElementById('save-key-btn').textContent = 'Verbinden…';
     try {
-      await tmdbFetch('/configuration');
-      localStorage.setItem(API_KEY_STORAGE, key);
-      showView('home'); renderHomeGrid();
-    } catch(e) {
-      err.textContent = 'Ongeldige sleutel. Controleer en probeer opnieuw.';
+      await testSupabaseConnection(url, key);
+      sbUrl = url; sbKey = key;
+      localStorage.setItem(SB_URL_KEY, url);
+      localStorage.setItem(SB_ANON_KEY, key);
+      localStorage.setItem('serietracker_configured', '1');
+      document.getElementById('save-key-btn').textContent = 'Verbinden en beginnen';
+      showView('home');
+      setSyncStatus('syncing');
+      await pullFromCloud();
+      renderHomeGrid();
+      showToast('Verbonden! Je series synchroniseren nu.');
+    } catch (e) {
+      err.textContent = 'Kon niet verbinden. Controleer URL en key (zie SUPABASE_SETUP.md).';
       err.style.display = 'block';
-      document.getElementById('save-key-btn').textContent = 'Opslaan en beginnen';
-      apiKey = '';
+      document.getElementById('save-key-btn').textContent = 'Verbinden en beginnen';
     }
   });
 
-  document.getElementById('settings-btn').addEventListener('click', () => {
-    document.getElementById('api-key-input').value = '';
-    showView('setup');
+  document.getElementById('skip-sync-btn').addEventListener('click', () => {
+    localStorage.setItem('serietracker_configured', '1');
+    showView('home'); renderHomeGrid(); setSyncStatus('none');
+    showToast('Lokaal opslaan actief — geen sync tussen apparaten.');
   });
 
+  // Logo -> terug naar home
+  document.getElementById('logo-btn').addEventListener('click', goHome);
+
+  // Settings button (gear) -> settings screen
+  document.getElementById('settings-btn').addEventListener('click', openSettingsScreen);
+  document.getElementById('settings-back-btn').addEventListener('click', goHome);
+
+  document.getElementById('settings-save-btn').addEventListener('click', async () => {
+    const url = document.getElementById('settings-sb-url').value.trim();
+    const key = document.getElementById('settings-sb-key').value.trim();
+    const err = document.getElementById('settings-error');
+    const ok = document.getElementById('settings-success');
+    err.style.display = 'none'; ok.style.display = 'none';
+    if (!url || !key) { err.textContent = 'Vul beide velden in, of gebruik "Sync loskoppelen".'; err.style.display = 'block'; return; }
+    document.getElementById('settings-save-btn').textContent = 'Controleren…';
+    try {
+      await testSupabaseConnection(url, key);
+      sbUrl = url; sbKey = key;
+      localStorage.setItem(SB_URL_KEY, url);
+      localStorage.setItem(SB_ANON_KEY, key);
+      document.getElementById('settings-save-btn').textContent = 'Opslaan';
+      ok.textContent = 'Verbonden! Synchroniseren…'; ok.style.display = 'block';
+      setSyncStatus('syncing');
+      await pullFromCloud();
+      renderHomeGrid();
+      showToast('Sync-instellingen opgeslagen.');
+    } catch (e) {
+      err.textContent = 'Kon niet verbinden. Controleer de gegevens.';
+      err.style.display = 'block';
+      document.getElementById('settings-save-btn').textContent = 'Opslaan';
+    }
+  });
+
+  document.getElementById('settings-disconnect-btn').addEventListener('click', () => {
+    if (!confirm('Sync loskoppelen? Je data blijft lokaal op dit apparaat staan, maar synct niet meer.')) return;
+    sbUrl = ''; sbKey = '';
+    localStorage.removeItem(SB_URL_KEY);
+    localStorage.removeItem(SB_ANON_KEY);
+    document.getElementById('settings-sb-url').value = '';
+    document.getElementById('settings-sb-key').value = '';
+    setSyncStatus('none');
+    showToast('Sync losgekoppeld.');
+  });
+
+  // Search
   document.getElementById('search-input').addEventListener('input', e => {
     const q = e.target.value; clearTimeout(searchTimeout);
     if (!q.trim()) { renderSearchResults([], ''); return; }
     searchTimeout = setTimeout(async () => { renderSearchResults(await searchSeries(q), q); }, 400);
   });
 
-  document.getElementById('back-btn').addEventListener('click', () => { showView('home'); renderHomeGrid(); });
+  document.getElementById('back-btn').addEventListener('click', goHome);
 
   document.getElementById('remove-series-btn').addEventListener('click', () => {
     if (!currentSerieId) return;
     const name = myData[currentSerieId]?.name || 'Serie';
     if (!confirm(`"${name}" verwijderen uit je lijst?`)) return;
-    delete myData[currentSerieId]; save();
-    showView('home'); renderHomeGrid(); showToast(`"${name}" verwijderd`);
+    const idToDelete = currentSerieId;
+    delete myData[idToDelete]; saveLocal();
+    deleteSerieFromCloud(idToDelete);
+    goHome(); showToast(`"${name}" verwijderd`);
   });
 
   const installBtn = document.getElementById('install-btn');
@@ -666,13 +917,11 @@ function init() {
     document.getElementById('install-banner').classList.remove('visible');
     if (outcome === 'accepted') showToast('App geïnstalleerd! 🎉');
   });
-
   const dismissBtn = document.getElementById('dismiss-btn');
   if (dismissBtn) dismissBtn.addEventListener('click', () => {
     document.getElementById('install-banner').classList.remove('visible');
   });
 
-  // Register service worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
