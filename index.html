@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0d0f">
+<meta name="description" content="Bijhouden welke series en afleveringen je hebt gezien">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>serie.track</title>
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #18181c;
+    --surface2: #222228;
+    --accent: #e8a838;
+    --accent2: #c47f10;
+    --text: #f0ede8;
+    --muted: #888;
+    --border: #2a2a32;
+    --radius: 14px;
+    --green: #3ecf6a;
+    --red: #e84a4a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    overscroll-behavior: none;
+  }
+
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(13,13,15,0.95);
+    backdrop-filter: blur(12px);
+    padding: 14px 16px 10px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .logo { font-size: 19px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+  .logo span { color: var(--accent); }
+  .back-btn {
+    display: none; align-items: center; gap: 6px;
+    background: none; border: none; color: var(--accent);
+    font-size: 15px; font-weight: 500; cursor: pointer; padding: 4px 0;
+  }
+  .back-btn svg { width: 18px; height: 18px; }
+  .search-wrap { position: relative; }
+  .search-wrap svg {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; color: var(--muted); pointer-events: none;
+  }
+  input[type=search], input[type=text], input[type=password] {
+    width: 100%; background: var(--surface2);
+    border: 0.5px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 15px; padding: 10px 12px 10px 40px;
+    outline: none; -webkit-appearance: none; transition: border-color .15s;
+  }
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+  input[type=search]::-webkit-search-cancel-button { display: none; }
+
+  .view { display: none; padding: 16px; }
+  .view.active { display: block; }
+
+  .setup-card {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 24px 20px; margin-top: 32px;
+  }
+  .setup-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .setup-card p { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
+  .setup-card a { color: var(--accent); text-decoration: none; }
+  .input-group { margin-bottom: 12px; }
+  .input-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .input-group input { padding-left: 12px; }
+  .btn {
+    width: 100%; background: var(--accent); color: #0d0d0f;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+    padding: 12px; cursor: pointer; transition: background .15s, transform .1s;
+  }
+  .btn:active { background: var(--accent2); transform: scale(0.98); }
+  .btn.secondary {
+    background: var(--surface2); color: var(--text);
+    border: 0.5px solid var(--border); margin-top: 8px;
+  }
+  .error-msg { color: var(--red); font-size: 13px; margin-top: 8px; display: none; }
+
+  .section-title {
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px;
+  }
+  .series-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .series-card {
+    position: relative; border-radius: 10px; overflow: hidden;
+    cursor: pointer; aspect-ratio: 2/3; background: var(--surface2);
+    transition: transform .15s;
+  }
+  .series-card:active { transform: scale(0.95); }
+  .series-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .series-card .no-img {
+    width: 100%; height: 100%; display: flex;
+    align-items: center; justify-content: center; font-size: 32px; color: var(--muted);
+  }
+  .series-card .card-info {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.88));
+    padding: 24px 8px 8px;
+  }
+  .series-card .card-title { font-size: 11px; font-weight: 600; line-height: 1.3; color: #fff; }
+  .series-card .progress-bar {
+    height: 3px; background: rgba(255,255,255,0.2);
+    border-radius: 2px; margin-top: 5px; overflow: hidden;
+  }
+  .series-card .progress-fill {
+    height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s;
+  }
+  .series-card .done-badge {
+    position: absolute; top: 6px; right: 6px;
+    background: var(--green); color: #fff; border-radius: 50%;
+    width: 22px; height: 22px; display: none;
+    align-items: center; justify-content: center; font-size: 13px;
+  }
+
+  .search-results { margin-top: 4px; }
+  .result-item {
+    display: flex; align-items: center; gap: 12px; padding: 10px;
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: background .1s;
+  }
+  .result-item:active { background: var(--surface2); }
+  .result-img {
+    width: 44px; height: 66px; border-radius: 6px;
+    object-fit: cover; background: var(--surface2); flex-shrink: 0;
+  }
+  .result-img.no-img {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: var(--muted);
+  }
+  .result-info { flex: 1; min-width: 0; }
+  .result-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .result-year { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .result-add {
+    background: var(--accent); color: #0d0d0f;
+    border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+    padding: 7px 13px; cursor: pointer; flex-shrink: 0;
+  }
+  .result-add.added { background: var(--surface2); color: var(--muted); border: 0.5px solid var(--border); }
+
+  .serie-hero { position: relative; height: 200px; overflow: hidden; margin: -16px -16px 0; }
+  .serie-hero img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.4); }
+  .serie-hero-info {
+    position: absolute; bottom: 16px; left: 16px; right: 16px;
+    display: flex; align-items: flex-end; gap: 12px;
+  }
+  .serie-poster {
+    width: 72px; height: 108px; border-radius: 8px; object-fit: cover;
+    flex-shrink: 0; box-shadow: 0 4px 20px rgba(0,0,0,.6);
+  }
+  .serie-hero-text h1 { font-size: 20px; font-weight: 700; line-height: 1.2; margin-bottom: 4px; }
+  .serie-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .stat-pill {
+    font-size: 12px; background: rgba(255,255,255,0.12);
+    border-radius: 20px; padding: 3px 9px; color: rgba(255,255,255,0.8);
+  }
+  .stat-pill.accent { background: var(--accent); color: #0d0d0f; font-weight: 600; }
+
+  .progress-summary {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    margin: 16px 0 8px; display: flex; align-items: center; gap: 12px;
+  }
+  .progress-circle { width: 52px; height: 52px; flex-shrink: 0; }
+  .progress-text { flex: 1; }
+  .progress-text strong { font-size: 15px; font-weight: 600; }
+  .progress-text span { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .mark-all-btn {
+    background: none; border: 0.5px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 12px; padding: 6px 10px; cursor: pointer;
+  }
+  .mark-all-btn:active { background: var(--surface2); }
+
+  .season-tabs {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+    margin-bottom: 14px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .season-tabs::-webkit-scrollbar { display: none; }
+  .season-tab {
+    background: var(--surface2); border: 0.5px solid var(--border);
+    border-radius: 20px; color: var(--muted); font-size: 13px; font-weight: 500;
+    padding: 7px 14px; white-space: nowrap; cursor: pointer; transition: all .15s; flex-shrink: 0;
+  }
+  .season-tab.active { background: var(--accent); border-color: var(--accent); color: #0d0d0f; font-weight: 700; }
+
+  .ep-item {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    background: var(--surface); border-radius: 10px; margin-bottom: 6px;
+    cursor: pointer; transition: background .1s; border: 0.5px solid var(--border);
+  }
+  .ep-item:active { background: var(--surface2); }
+  .ep-item.watched { border-color: rgba(62,207,106,0.3); }
+  .ep-check {
+    width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all .15s; color: transparent;
+  }
+  .ep-item.watched .ep-check { background: var(--green); border-color: var(--green); color: #fff; }
+  .ep-info { flex: 1; min-width: 0; }
+  .ep-num { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .ep-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ep-date { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+  .empty-state small { font-size: 13px; margin-top: 6px; display: block; }
+
+  .loading-dots { display: flex; justify-content: center; gap: 6px; padding: 32px; }
+  .loading-dots span {
+    width: 8px; height: 8px; background: var(--accent); border-radius: 50%;
+    animation: bounce .8s infinite alternate;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: .2s; }
+  .loading-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes bounce { from { opacity:.3; transform:scale(0.7); } to { opacity:1; transform:scale(1); } }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); border: 0.5px solid var(--border);
+    border-radius: 20px; padding: 10px 18px; font-size: 14px; font-weight: 500;
+    z-index: 999; transition: transform .25s cubic-bezier(.34,1.56,.64,1); white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* PWA install banner */
+  .install-banner {
+    display: none; align-items: center; gap: 10px;
+    background: var(--surface); border: 0.5px solid var(--accent);
+    border-radius: 10px; padding: 12px 14px; margin: 12px 0 4px;
+  }
+  .install-banner.visible { display: flex; }
+  .install-banner p { flex: 1; font-size: 13px; color: var(--muted); line-height: 1.4; }
+  .install-banner p strong { color: var(--text); }
+  .install-btn {
+    background: var(--accent); color: #0d0d0f; border: none;
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    padding: 8px 12px; cursor: pointer; flex-shrink: 0;
+  }
+  .dismiss-btn {
+    background: none; border: none; color: var(--muted);
+    font-size: 18px; cursor: pointer; padding: 0 2px; flex-shrink: 0;
+  }
+  .hide { display: none !important; }
+  svg.check-icon { width: 14px; height: 14px; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- SETUP -->
+<div id="view-setup" class="view active" style="padding-top:32px">
+  <div class="setup-card">
+    <h2>Welkom bij serie.track 📺</h2>
+    <p>Om series te zoeken heb je een gratis TMDB API-sleutel nodig.<br>
+    Maak een account aan op <a href="https://www.themoviedb.org/signup" target="_blank">themoviedb.org</a>, ga naar <strong>Instellingen → API</strong> en kopieer je sleutel hieronder.</p>
+    <div class="input-group">
+      <label>TMDB API-sleutel</label>
+      <input type="password" id="api-key-input" placeholder="Plak hier je API-sleutel">
+    </div>
+    <div class="error-msg" id="setup-error">Ongeldige sleutel. Controleer en probeer opnieuw.</div>
+    <button class="btn" id="save-key-btn">Opslaan en beginnen</button>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="view-home" class="view">
+  <div class="header" id="home-header">
+    <div class="header-top">
+      <div class="logo">serie<span>.</span>track</div>
+      <button class="btn secondary" id="settings-btn" style="width:auto;padding:6px 12px;font-size:13px;margin:0">⚙ Sleutel</button>
+    </div>
+    <div class="install-banner" id="install-banner">
+      <p><strong>Voeg toe aan homescreen</strong><br>Gebruik als app op je telefoon</p>
+      <button class="install-btn" id="install-btn">Installeer</button>
+      <button class="dismiss-btn" id="dismiss-btn">×</button>
+    </div>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" id="search-input" placeholder="Zoek een serie…" autocomplete="off">
+    </div>
+  </div>
+
+  <div id="search-results-wrap" class="hide">
+    <div style="height:12px"></div>
+    <div id="search-results" class="search-results"></div>
+  </div>
+
+  <div id="my-series-wrap">
+    <div style="height:12px"></div>
+    <div class="section-title" id="my-series-label">Mijn series</div>
+    <div class="series-grid" id="series-grid"></div>
+    <div class="empty-state hide" id="empty-home">
+      <div class="icon">📺</div>
+      <p>Nog geen series toegevoegd</p>
+      <small>Zoek hierboven naar je favoriete serie</small>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div id="view-detail" class="view">
+  <div class="header" id="detail-header">
+    <div class="header-top">
+      <button class="back-btn" id="back-btn" style="display:flex">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+        Terug
+      </button>
+      <button class="btn" id="remove-series-btn" style="width:auto;padding:6px 12px;font-size:13px;margin:0;background:var(--surface2);color:var(--red);border:0.5px solid var(--border)">Verwijder</button>
+    </div>
+  </div>
+  <div id="detail-content"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'serietracker_data';
+const API_KEY_STORAGE = 'serietracker_apikey';
+const TMDB_IMG = 'https://image.tmdb.org/t/p/';
+let apiKey = '';
+let myData = {};
+let currentSerieId = null;
+let currentSeason = 1;
+let searchTimeout = null;
+let seasonCache = {};
+let deferredPrompt = null;
+
+// ── Persistence ──
+function save() {
+  const out = {};
+  for (const [id, s] of Object.entries(myData)) {
+    out[id] = { ...s, watchedEps: [...s.watchedEps] };
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(out));
+}
+function load() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  const parsed = JSON.parse(raw);
+  for (const [id, s] of Object.entries(parsed)) {
+    myData[id] = { ...s, watchedEps: new Set(s.watchedEps) };
+  }
+}
+
+// ── Views ──
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── TMDB ──
+async function tmdbFetch(path, params = {}) {
+  const url = new URL('https://api.themoviedb.org/3' + path);
+  url.searchParams.set('api_key', apiKey);
+  url.searchParams.set('language', 'nl-NL');
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('TMDB ' + r.status);
+  return r.json();
+}
+async function searchSeries(q) {
+  const d = await tmdbFetch('/search/tv', { query: q, page: 1 });
+  return d.results.slice(0, 8);
+}
+async function getSerieDetails(id) { return tmdbFetch('/tv/' + id); }
+async function getSeasonEpisodes(serieId, season) {
+  const key = serieId + '_' + season;
+  if (seasonCache[key]) return seasonCache[key];
+  const data = await tmdbFetch('/tv/' + serieId + '/season/' + season);
+  const eps = (data.episodes || []).map(e => ({
+    id: serieId + '_s' + season + 'e' + e.episode_number,
+    num: e.episode_number,
+    name: e.name,
+    date: e.air_date
+  }));
+  seasonCache[key] = eps;
+  return eps;
+}
+
+// ── Home grid ──
+function renderHomeGrid() {
+  const grid = document.getElementById('series-grid');
+  const empty = document.getElementById('empty-home');
+  const ids = Object.keys(myData);
+  if (ids.length === 0) { grid.innerHTML = ''; empty.classList.remove('hide'); return; }
+  empty.classList.add('hide');
+  grid.innerHTML = ids.map(id => {
+    const s = myData[id];
+    const pct = s.totalEps > 0 ? Math.round((s.watchedEps.size / s.totalEps) * 100) : 0;
+    const done = s.totalEps > 0 && s.watchedEps.size >= s.totalEps;
+    const img = s.poster
+      ? `<img src="${TMDB_IMG}w342${s.poster}" alt="${s.name}" loading="lazy">`
+      : `<div class="no-img">📺</div>`;
+    return `<div class="series-card" onclick="openSerie('${id}')">
+      ${img}
+      <div class="card-info">
+        <div class="card-title">${s.name}</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="done-badge" style="display:${done?'flex':'none'}">✓</div>
+    </div>`;
+  }).join('');
+  document.getElementById('my-series-label').textContent = `Mijn series (${ids.length})`;
+}
+
+// ── Search results ──
+function renderSearchResults(results, query) {
+  const wrap = document.getElementById('search-results-wrap');
+  const div = document.getElementById('search-results');
+  const myWrap = document.getElementById('my-series-wrap');
+  if (!query.trim()) { wrap.classList.add('hide'); myWrap.classList.remove('hide'); return; }
+  wrap.classList.remove('hide'); myWrap.classList.add('hide');
+  if (results.length === 0) {
+    div.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>Geen resultaten voor "${query}"</p></div>`;
+    return;
+  }
+  div.innerHTML = results.map(r => {
+    const year = r.first_air_date ? r.first_air_date.split('-')[0] : '';
+    const added = !!myData[r.id];
+    const img = r.poster_path
+      ? `<img class="result-img" src="${TMDB_IMG}w154${r.poster_path}" alt="${r.name}">`
+      : `<div class="result-img no-img">📺</div>`;
+    return `<div class="result-item">
+      ${img}
+      <div class="result-info">
+        <div class="result-name">${r.name}</div>
+        <div class="result-year">${year}${r.vote_average ? ' · ⭐ ' + r.vote_average.toFixed(1) : ''}</div>
+      </div>
+      <button class="result-add ${added?'added':''}" onclick="addSerie(${r.id},'${(r.name||'').replace(/'/g,"\\'")}','${r.poster_path||''}','${r.backdrop_path||''}');event.stopPropagation();" id="add-btn-${r.id}">
+        ${added ? 'Toegevoegd' : '+ Voeg toe'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function addSerie(id, name, poster, backdrop) {
+  const btn = document.getElementById('add-btn-' + id);
+  if (myData[id]) { showToast('Al in je lijst!'); return; }
+  if (btn) { btn.textContent = '…'; btn.disabled = true; }
+  try {
+    const d = await getSerieDetails(id);
+    myData[id] = { id, name, poster: poster || d.poster_path || '', backdrop: backdrop || d.backdrop_path || '',
+      totalEps: d.number_of_episodes || 0, seasons: d.number_of_seasons || 1, watchedEps: new Set() };
+    save();
+    if (btn) { btn.textContent = 'Toegevoegd'; btn.classList.add('added'); btn.disabled = false; }
+    showToast(`"${name}" toegevoegd!`);
+  } catch(e) {
+    if (btn) { btn.textContent = '+ Voeg toe'; btn.disabled = false; }
+    showToast('Fout bij ophalen, probeer opnieuw.');
+  }
+}
+
+// ── Detail ──
+async function openSerie(id) {
+  currentSerieId = id; currentSeason = 1;
+  showView('detail');
+  const s = myData[id];
+  const content = document.getElementById('detail-content');
+  const pct = s.totalEps > 0 ? Math.round((s.watchedEps.size / s.totalEps) * 100) : 0;
+  const heroSrc = (s.backdrop || s.poster) ? `${TMDB_IMG}w780${s.backdrop || s.poster}` : '';
+  const heroHtml = heroSrc ? `<img src="${heroSrc}" alt="">` : `<div style="background:var(--surface2);height:100%"></div>`;
+  const tabs = Array.from({length: s.seasons}, (_,i)=>i+1).map(n =>
+    `<button class="season-tab ${n===1?'active':''}" onclick="switchSeason(${n})" id="stab-${n}">S${n}</button>`
+  ).join('');
+  const circ = 2 * Math.PI * 22;
+  content.innerHTML = `
+    <div class="serie-hero">
+      ${heroHtml}
+      <div class="serie-hero-info">
+        ${s.poster ? `<img class="serie-poster" src="${TMDB_IMG}w154${s.poster}" alt="${s.name}">` : ''}
+        <div class="serie-hero-text">
+          <h1>${s.name}</h1>
+          <div class="serie-stats">
+            <span class="stat-pill">${s.seasons} seizoen${s.seasons!==1?'en':''}</span>
+            <span class="stat-pill">${s.totalEps} afleveringen</span>
+            <span class="stat-pill accent" id="pct-pill">${pct}% gezien</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:16px">
+      <div class="progress-summary">
+        <svg class="progress-circle" viewBox="0 0 52 52">
+          <circle cx="26" cy="26" r="22" fill="none" stroke="var(--border)" stroke-width="4"/>
+          <circle cx="26" cy="26" r="22" fill="none" stroke="var(--accent)" stroke-width="4"
+            stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-pct/100)}"
+            stroke-linecap="round" transform="rotate(-90 26 26)" id="prog-circle"/>
+          <text x="26" y="30" text-anchor="middle" fill="var(--text)" font-size="12" font-weight="600" id="prog-text">${pct}%</text>
+        </svg>
+        <div class="progress-text">
+          <strong id="prog-label">${s.watchedEps.size} van ${s.totalEps} gezien</strong>
+          <span id="prog-sub">${s.totalEps - s.watchedEps.size} afleveringen resterend</span>
+        </div>
+        <button class="mark-all-btn" onclick="markAllSeason()">Alles ✓</button>
+      </div>
+      <div class="season-tabs" id="season-tabs">${tabs}</div>
+      <div id="episode-list"><div class="loading-dots"><span></span><span></span><span></span></div></div>
+    </div>`;
+  await loadSeason(id, 1);
+}
+
+async function loadSeason(serieId, season) {
+  const list = document.getElementById('episode-list');
+  if (!list) return;
+  list.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  try {
+    const eps = await getSeasonEpisodes(serieId, season);
+    const s = myData[serieId];
+    if (eps.length === 0) { list.innerHTML = `<div class="empty-state"><p>Geen afleveringen gevonden</p></div>`; return; }
+    list.innerHTML = eps.map(ep => {
+      const watched = s.watchedEps.has(ep.id);
+      const date = ep.date ? new Date(ep.date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '';
+      return `<div class="ep-item ${watched?'watched':''}" onclick="toggleEp('${ep.id}',this)" id="ep-${ep.id}">
+        <div class="ep-check">
+          <svg class="check-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="2,7 5.5,11 12,3"/></svg>
+        </div>
+        <div class="ep-info">
+          <div class="ep-num">Aflevering ${ep.num}</div>
+          <div class="ep-name">${ep.name||'Aflevering '+ep.num}</div>
+          ${date?`<div class="ep-date">${date}</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    refreshSeasonTab(season, serieId, eps);
+  } catch(e) {
+    list.innerHTML = `<div class="empty-state"><p>Kon afleveringen niet laden.</p></div>`;
+  }
+}
+
+function refreshSeasonTab(season, serieId, eps) {
+  const s = myData[serieId];
+  const tab = document.getElementById('stab-' + season);
+  if (!tab) return;
+  const done = eps.length > 0 && eps.every(ep => s.watchedEps.has(ep.id));
+  tab.innerHTML = `S${season}${done?' ✓':''}`;
+}
+
+async function switchSeason(n) {
+  currentSeason = n;
+  document.querySelectorAll('.season-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('stab-' + n);
+  if (tab) tab.classList.add('active');
+  await loadSeason(currentSerieId, n);
+}
+
+function toggleEp(epId, el) {
+  const s = myData[currentSerieId];
+  if (s.watchedEps.has(epId)) s.watchedEps.delete(epId);
+  else s.watchedEps.add(epId);
+  el.classList.toggle('watched', s.watchedEps.has(epId));
+  save(); updateProgress();
+  const eps = seasonCache[currentSerieId + '_' + currentSeason] || [];
+  refreshSeasonTab(currentSeason, currentSerieId, eps);
+}
+
+async function markAllSeason() {
+  const s = myData[currentSerieId];
+  const eps = await getSeasonEpisodes(currentSerieId, currentSeason);
+  const allWatched = eps.every(ep => s.watchedEps.has(ep.id));
+  for (const ep of eps) { if (allWatched) s.watchedEps.delete(ep.id); else s.watchedEps.add(ep.id); }
+  save(); updateProgress(); await loadSeason(currentSerieId, currentSeason);
+  showToast(allWatched ? 'Seizoen ongedaan gemaakt' : 'Seizoen als gezien gemarkeerd ✓');
+}
+
+function updateProgress() {
+  const s = myData[currentSerieId];
+  const pct = s.totalEps > 0 ? Math.round((s.watchedEps.size / s.totalEps) * 100) : 0;
+  const circ = 2 * Math.PI * 22;
+  const circle = document.getElementById('prog-circle');
+  const txt = document.getElementById('prog-text');
+  const label = document.getElementById('prog-label');
+  const sub = document.getElementById('prog-sub');
+  const pill = document.getElementById('pct-pill');
+  if (circle) circle.style.strokeDashoffset = circ * (1 - pct / 100);
+  if (txt) txt.textContent = pct + '%';
+  if (label) label.textContent = `${s.watchedEps.size} van ${s.totalEps} gezien`;
+  if (sub) sub.textContent = `${s.totalEps - s.watchedEps.size} afleveringen resterend`;
+  if (pill) pill.textContent = pct + '% gezien';
+}
+
+// ── PWA Install ──
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.classList.add('visible');
+});
+
+// ── Init ──
+function init() {
+  load();
+  apiKey = localStorage.getItem(API_KEY_STORAGE) || '';
+  if (apiKey) { showView('home'); renderHomeGrid(); } else { showView('setup'); }
+
+  document.getElementById('save-key-btn').addEventListener('click', async () => {
+    const key = document.getElementById('api-key-input').value.trim();
+    const err = document.getElementById('setup-error');
+    if (!key) { err.style.display='block'; err.textContent='Vul een sleutel in.'; return; }
+    err.style.display = 'none';
+    document.getElementById('save-key-btn').textContent = 'Controleren…';
+    apiKey = key;
+    try {
+      await tmdbFetch('/configuration');
+      localStorage.setItem(API_KEY_STORAGE, key);
+      showView('home'); renderHomeGrid();
+    } catch(e) {
+      err.textContent = 'Ongeldige sleutel. Controleer en probeer opnieuw.';
+      err.style.display = 'block';
+      document.getElementById('save-key-btn').textContent = 'Opslaan en beginnen';
+      apiKey = '';
+    }
+  });
+
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    document.getElementById('api-key-input').value = '';
+    showView('setup');
+  });
+
+  document.getElementById('search-input').addEventListener('input', e => {
+    const q = e.target.value; clearTimeout(searchTimeout);
+    if (!q.trim()) { renderSearchResults([], ''); return; }
+    searchTimeout = setTimeout(async () => { renderSearchResults(await searchSeries(q), q); }, 400);
+  });
+
+  document.getElementById('back-btn').addEventListener('click', () => { showView('home'); renderHomeGrid(); });
+
+  document.getElementById('remove-series-btn').addEventListener('click', () => {
+    if (!currentSerieId) return;
+    const name = myData[currentSerieId]?.name || 'Serie';
+    if (!confirm(`"${name}" verwijderen uit je lijst?`)) return;
+    delete myData[currentSerieId]; save();
+    showView('home'); renderHomeGrid(); showToast(`"${name}" verwijderd`);
+  });
+
+  const installBtn = document.getElementById('install-btn');
+  if (installBtn) installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('install-banner').classList.remove('visible');
+    if (outcome === 'accepted') showToast('App geïnstalleerd! 🎉');
+  });
+
+  const dismissBtn = document.getElementById('dismiss-btn');
+  if (dismissBtn) dismissBtn.addEventListener('click', () => {
+    document.getElementById('install-banner').classList.remove('visible');
+  });
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
