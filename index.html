@@ -498,10 +498,55 @@ svg.check-icon { width: 14px; height: 14px; }
   }
   .serie-hero { margin: 0; }
 }
+
+/* ═══ SETTINGS MODAL (desktop) ═══ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: 16px; padding: 28px; width: 440px; max-width: 95vw;
+}
+.modal-box h2 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+.modal-box .modal-hint { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.modal-actions .btn { margin-top: 0; }
+.modal-close {
+  float: right; background: none; border: none; color: var(--muted);
+  font-size: 20px; cursor: pointer; line-height: 1; margin-top: -4px;
+}
+.modal-close:hover { color: var(--text); }
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
+
+<!-- Desktop settings modal -->
+<div class="modal-overlay" id="settings-modal" onclick="closeSettingsModal(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeSettingsModal()">×</button>
+    <h2>Sync-instellingen</h2>
+    <p class="modal-hint" id="modal-sync-status">Niet verbonden</p>
+    <div class="input-group">
+      <label>Supabase Project URL</label>
+      <input type="text" id="modal-sb-url" placeholder="https://xxxxx.supabase.co">
+    </div>
+    <div class="input-group">
+      <label>Supabase anon key</label>
+      <input type="password" id="modal-sb-key" placeholder="eyJhbGci...">
+    </div>
+    <div class="error-msg" id="modal-error"></div>
+    <div class="success-msg" id="modal-success"></div>
+    <div class="modal-actions">
+      <button class="btn" id="modal-save-btn" onclick="saveModalSettings()">Opslaan</button>
+      <button class="btn secondary" onclick="disconnectSync()">Loskoppelen</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- ═══════════════════════════════
      DESKTOP: sidebar + split panels
@@ -519,7 +564,7 @@ svg.check-icon { width: 14px; height: 14px; }
     <div class="sidebar-bottom">
       <div class="sidebar-sync-dot" id="desktop-sync-dot"></div>
       <span class="sidebar-sync-label" id="desktop-sync-label">Lokaal</span>
-      <button class="sidebar-settings-btn" onclick="showMobileView('settings')" title="Instellingen">⚙</button>
+      <button class="sidebar-settings-btn" onclick="openSettingsModal()" title="Instellingen">⚙</button>
     </div>
   </aside>
 
@@ -1474,6 +1519,59 @@ function init() {
   if (isDesktop && localStorage.getItem('serietracker_configured') === '1') {
     renderDesktopMinePanel();
   }
+}
+
+
+// ── Desktop settings modal ──
+function openSettingsModal() {
+  document.getElementById('modal-sb-url').value = sbUrl;
+  document.getElementById('modal-sb-key').value = sbKey;
+  document.getElementById('modal-sync-status').textContent = hasSync()
+    ? '✓ Verbonden met Supabase — je data synchroniseert automatisch.'
+    : 'Niet verbonden. Data wordt alleen lokaal opgeslagen.';
+  document.getElementById('modal-error').style.display = 'none';
+  document.getElementById('modal-success').style.display = 'none';
+  document.getElementById('settings-modal').classList.add('open');
+}
+function closeSettingsModal(e) {
+  if (e && e.target !== document.getElementById('settings-modal')) return;
+  document.getElementById('settings-modal').classList.remove('open');
+}
+async function saveModalSettings() {
+  const url = document.getElementById('modal-sb-url').value.trim();
+  const key = document.getElementById('modal-sb-key').value.trim();
+  const err = document.getElementById('modal-error');
+  const ok  = document.getElementById('modal-success');
+  err.style.display = 'none'; ok.style.display = 'none';
+  if (!url || !key) { err.textContent = 'Vul beide velden in.'; err.style.display = 'block'; return; }
+  document.getElementById('modal-save-btn').textContent = 'Verbinden…';
+  try {
+    await testSupabaseConnection(url, key);
+    sbUrl = url; sbKey = key;
+    localStorage.setItem(SB_URL_KEY, url);
+    localStorage.setItem(SB_ANON_KEY, key);
+    localStorage.setItem('serietracker_configured', '1');
+    document.getElementById('modal-save-btn').textContent = 'Opslaan';
+    ok.textContent = '✓ Verbonden!'; ok.style.display = 'block';
+    setSyncStatus('syncing');
+    await pullFromCloud();
+    renderDesktopMinePanel();
+    renderMineTab();
+    document.getElementById('modal-sync-status').textContent = '✓ Verbonden met Supabase — je data synchroniseert automatisch.';
+    showToast('Sync-instellingen opgeslagen!');
+  } catch(e) {
+    err.textContent = 'Kon niet verbinden. Controleer URL en key.';
+    err.style.display = 'block';
+    document.getElementById('modal-save-btn').textContent = 'Opslaan';
+  }
+}
+function disconnectSync() {
+  if (!confirm('Sync loskoppelen? Data blijft lokaal staan.')) return;
+  sbUrl = ''; sbKey = '';
+  localStorage.removeItem(SB_URL_KEY); localStorage.removeItem(SB_ANON_KEY);
+  setSyncStatus('none');
+  document.getElementById('modal-sync-status').textContent = 'Niet verbonden. Data wordt alleen lokaal opgeslagen.';
+  showToast('Sync losgekoppeld.');
 }
 
 document.addEventListener('DOMContentLoaded', init);
