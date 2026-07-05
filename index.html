@@ -11,562 +11,895 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>serie.track</title>
 <style>
-  :root {
-    --bg: #0d0d0f;
-    --surface: #18181c;
-    --surface2: #222228;
-    --accent: #e8a838;
-    --accent2: #c47f10;
-    --text: #f0ede8;
-    --muted: #888;
-    --border: #2a2a32;
-    --radius: 14px;
-    --green: #3ecf6a;
-    --red: #e84a4a;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    max-width: 480px;
-    margin: 0 auto;
-    overscroll-behavior: none;
-  }
+:root {
+  --bg: #0d0d0f;
+  --surface: #18181c;
+  --surface2: #222228;
+  --accent: #e8a838;
+  --accent2: #c47f10;
+  --text: #f0ede8;
+  --muted: #777;
+  --border: #2a2a32;
+  --radius: 14px;
+  --green: #3ecf6a;
+  --red: #e84a4a;
+  --blue: #4a9ee8;
+  --sidebar: 300px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; overscroll-behavior: none;
+}
 
-  .header {
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(13,13,15,0.95);
-    backdrop-filter: blur(12px);
-    padding: 14px 16px 10px;
-    border-bottom: 0.5px solid var(--border);
+/* ═══════════════════════════════
+   DESKTOP LAYOUT
+═══════════════════════════════ */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Desktop: left sidebar navigation */
+.desktop-sidebar {
+  display: none;
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 0.5px solid var(--border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex-direction: column;
+  padding: 24px 0;
+}
+.desktop-sidebar .logo {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
+  padding: 0 20px 20px;
+  border-bottom: 0.5px solid var(--border);
+  margin-bottom: 16px;
+  cursor: pointer; background: none; border-top: none;
+  border-left: none; border-right: none;
+  color: var(--text); font-family: inherit; display: block; text-align: left;
+}
+.desktop-sidebar .logo span { color: var(--accent); }
+.sidebar-nav-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; font-size: 14px; font-weight: 500;
+  color: var(--muted); background: none; border: none;
+  cursor: pointer; width: 100%; text-align: left;
+  transition: all .15s; border-radius: 0;
+}
+.sidebar-nav-btn:hover { color: var(--text); background: var(--surface2); }
+.sidebar-nav-btn.active { color: var(--accent); background: rgba(232,168,56,.08); }
+.sidebar-nav-btn .nav-icon { font-size: 16px; }
+.sidebar-bottom {
+  margin-top: auto; padding: 16px 20px;
+  border-top: 0.5px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.sidebar-sync-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted); flex-shrink: 0; transition: background .2s;
+}
+.sidebar-sync-dot.online { background: var(--green); }
+.sidebar-sync-dot.syncing { background: var(--accent); animation: pulse 1s infinite; }
+.sidebar-sync-dot.offline { background: var(--red); }
+.sidebar-sync-label { font-size: 12px; color: var(--muted); flex: 1; }
+.sidebar-settings-btn {
+  background: none; border: none; color: var(--muted);
+  font-size: 16px; cursor: pointer; padding: 4px;
+}
+.sidebar-settings-btn:hover { color: var(--text); }
+
+/* Main content area */
+.main-content {
+  flex: 1;
+  min-width: 0;
+  max-width: 540px; /* mobile-like cap on mobile */
+  margin: 0 auto;
+}
+
+/* ═══════════════════════════════
+   DESKTOP: 2-column split view
+═══════════════════════════════ */
+.desktop-split {
+  display: none;
+  gap: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+.split-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 0.5px solid var(--border);
+}
+.split-panel:last-child { border-right: none; }
+.split-panel-header {
+  padding: 16px 20px 12px;
+  border-bottom: 0.5px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.split-panel-header h2 { font-size: 16px; font-weight: 600; }
+.split-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* ═══════════════════════════════
+   MOBILE LAYOUT (default)
+═══════════════════════════════ */
+.mobile-header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(13,13,15,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 0.5px solid var(--border);
+}
+.mobile-header-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 10px;
+}
+.logo-btn {
+  font-size: 19px; font-weight: 700; letter-spacing: -0.5px; color: var(--text);
+  cursor: pointer; background: none; border: none; padding: 0; font-family: inherit;
+}
+.logo-btn span { color: var(--accent); }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.sync-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted); flex-shrink: 0; transition: background .2s;
+}
+.sync-dot.online { background: var(--green); }
+.sync-dot.syncing { background: var(--accent); animation: pulse 1s infinite; }
+.sync-dot.offline { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* Mobile tab bar */
+.tab-bar {
+  display: flex;
+  border-bottom: 0.5px solid var(--border);
+}
+.tab-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 8px; font-size: 13px; font-weight: 500;
+  color: var(--muted); background: none; border: none; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all .15s;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn .tab-icon { font-size: 15px; }
+
+/* Back button in mobile header */
+.back-btn {
+  display: none; align-items: center; gap: 6px;
+  background: none; border: none; color: var(--accent);
+  font-size: 15px; font-weight: 500; cursor: pointer; padding: 4px 0;
+}
+.back-btn svg { width: 18px; height: 18px; }
+
+/* ═══════════════════════════════
+   VIEWS (mobile)
+═══════════════════════════════ */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ═══════════════════════════════
+   SEARCH BAR
+═══════════════════════════════ */
+.search-wrap { position: relative; padding: 8px 16px 10px; }
+.search-wrap svg {
+  position: absolute; left: 28px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; color: var(--muted); pointer-events: none;
+}
+input[type=search], input[type=text], input[type=password] {
+  width: 100%; background: var(--surface2);
+  border: 0.5px solid var(--border); border-radius: 10px;
+  color: var(--text); font-size: 15px; padding: 10px 12px 10px 40px;
+  outline: none; -webkit-appearance: none; transition: border-color .15s;
+}
+input:focus { border-color: var(--accent); }
+input::placeholder { color: var(--muted); }
+input[type=search]::-webkit-search-cancel-button { display: none; }
+
+/* ═══════════════════════════════
+   STATUS FILTER BAR
+═══════════════════════════════ */
+.filter-bar {
+  display: flex; gap: 6px; padding: 0 16px 12px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+.filter-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--surface2); border: 0.5px solid var(--border);
+  border-radius: 20px; color: var(--muted); font-size: 12px; font-weight: 500;
+  padding: 5px 12px; white-space: nowrap; cursor: pointer;
+  transition: all .15s; flex-shrink: 0;
+}
+.filter-btn.active { background: var(--accent); border-color: var(--accent); color: #0d0d0f; font-weight: 600; }
+
+/* ═══════════════════════════════
+   SERIES GRID
+═══════════════════════════════ */
+.content-pad { padding: 0 16px 80px; }
+.section-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px; margin-top: 16px;
+}
+.section-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+.section-count { font-size: 12px; color: var(--muted); }
+.series-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 8px; }
+.series-card {
+  position: relative; border-radius: 10px; overflow: hidden;
+  cursor: pointer; aspect-ratio: 2/3; background: var(--surface2);
+  transition: transform .15s;
+}
+.series-card:active { transform: scale(0.95); }
+.series-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.series-card .no-img {
+  width: 100%; height: 100%; display: flex;
+  align-items: center; justify-content: center; font-size: 28px; color: var(--muted);
+}
+.series-card .card-info {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.9));
+  padding: 20px 7px 7px;
+}
+.series-card .card-title { font-size: 10px; font-weight: 600; line-height: 1.3; color: #fff; }
+.series-card .progress-bar { height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.series-card .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+.status-badge {
+  position: absolute; top: 5px; left: 5px;
+  border-radius: 50%; width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; backdrop-filter: blur(4px);
+}
+.status-badge.watching { background: rgba(74,158,232,.85); }
+.status-badge.waiting { background: rgba(232,168,56,.85); }
+.status-badge.done { background: rgba(62,207,106,.85); }
+
+/* ═══════════════════════════════
+   SEARCH RESULTS
+═══════════════════════════════ */
+.search-results { padding: 0 16px; }
+.result-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px;
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: 10px; margin-bottom: 8px; cursor: pointer;
+}
+.result-img { width: 44px; height: 66px; border-radius: 6px; object-fit: cover; background: var(--surface2); flex-shrink: 0; }
+.result-img.no-img { display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--muted); }
+.result-info { flex: 1; min-width: 0; }
+.result-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.result-year { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.result-add {
+  background: var(--accent); color: #0d0d0f; border: none;
+  border-radius: 8px; font-size: 13px; font-weight: 600; padding: 7px 13px; cursor: pointer; flex-shrink: 0;
+}
+.result-add.added { background: var(--surface2); color: var(--muted); border: 0.5px solid var(--border); }
+
+/* ═══════════════════════════════
+   IMDB IMPORT TAB
+═══════════════════════════════ */
+.import-pad { padding: 16px 16px 80px; }
+.import-card {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+}
+.import-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.import-card p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
+.import-card ol { font-size: 13px; color: var(--muted); line-height: 1.8; padding-left: 18px; margin-bottom: 14px; }
+.import-card ol li { margin-bottom: 2px; }
+.import-card a { color: var(--accent); text-decoration: none; }
+.upload-zone {
+  border: 1.5px dashed var(--border); border-radius: 10px;
+  padding: 24px; text-align: center; cursor: pointer;
+  transition: border-color .15s; background: var(--surface2);
+}
+.upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); }
+.upload-zone .upload-icon { font-size: 28px; margin-bottom: 8px; }
+.upload-zone p { font-size: 13px; color: var(--muted); }
+.upload-zone strong { color: var(--accent); }
+#csv-file-input { display: none; }
+
+.import-list-section { margin-bottom: 16px; }
+.import-list-title {
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px;
+}
+.import-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: 10px; margin-bottom: 6px;
+}
+.import-item-img { width: 36px; height: 54px; border-radius: 6px; object-fit: cover; background: var(--surface2); flex-shrink: 0; }
+.import-item-info { flex: 1; min-width: 0; }
+.import-item-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.import-item-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.import-add-btn {
+  background: var(--accent); color: #0d0d0f; border: none;
+  border-radius: 8px; font-size: 12px; font-weight: 600; padding: 6px 10px; cursor: pointer; flex-shrink: 0;
+}
+.import-add-btn.added { background: var(--surface2); color: var(--muted); border: 0.5px solid var(--border); }
+.import-add-btn:disabled { opacity: .5; }
+
+/* ═══════════════════════════════
+   DETAIL VIEW
+═══════════════════════════════ */
+.serie-hero { position: relative; height: 200px; overflow: hidden; margin: 0 -16px; }
+.serie-hero img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.4); }
+.serie-hero-info { position: absolute; bottom: 16px; left: 16px; right: 16px; display: flex; align-items: flex-end; gap: 12px; }
+.serie-poster { width: 72px; height: 108px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 20px rgba(0,0,0,.6); }
+.serie-hero-text h1 { font-size: 20px; font-weight: 700; line-height: 1.2; margin-bottom: 4px; }
+.serie-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.stat-pill { font-size: 12px; background: rgba(255,255,255,0.12); border-radius: 20px; padding: 3px 9px; color: rgba(255,255,255,0.8); }
+.stat-pill.accent { background: var(--accent); color: #0d0d0f; font-weight: 600; }
+
+/* Status selector */
+.status-selector {
+  display: flex; gap: 6px; padding: 14px 16px 4px; flex-wrap: wrap;
+}
+.status-sel-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--surface2); border: 0.5px solid var(--border);
+  border-radius: 20px; color: var(--muted); font-size: 12px; font-weight: 500;
+  padding: 6px 12px; cursor: pointer; transition: all .15s;
+}
+.status-sel-btn.active-watching { background: rgba(74,158,232,.15); border-color: var(--blue); color: var(--blue); font-weight: 600; }
+.status-sel-btn.active-waiting { background: rgba(232,168,56,.15); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.status-sel-btn.active-done { background: rgba(62,207,106,.15); border-color: var(--green); color: var(--green); font-weight: 600; }
+
+.progress-summary {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  margin: 12px 16px; display: flex; align-items: center; gap: 12px;
+}
+.progress-circle { width: 52px; height: 52px; flex-shrink: 0; }
+.progress-text { flex: 1; }
+.progress-text strong { font-size: 15px; font-weight: 600; }
+.progress-text span { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.mark-all-btn {
+  background: none; border: 0.5px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 12px; padding: 6px 10px; cursor: pointer;
+}
+.mark-all-btn:active { background: var(--surface2); }
+
+.season-tabs {
+  display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden;
+  padding: 4px 16px 10px; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.season-tabs::-webkit-scrollbar { height: 5px; }
+.season-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.season-tab {
+  background: var(--surface2); border: 0.5px solid var(--border);
+  border-radius: 20px; color: var(--muted); font-size: 13px; font-weight: 500;
+  padding: 7px 14px; white-space: nowrap; cursor: pointer; transition: all .15s; flex-shrink: 0;
+}
+.season-tab.active { background: var(--accent); border-color: var(--accent); color: #0d0d0f; font-weight: 700; }
+
+.ep-list { padding: 0 16px 80px; }
+.ep-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  background: var(--surface); border-radius: 10px; margin-bottom: 6px;
+  cursor: pointer; transition: background .1s; border: 0.5px solid var(--border);
+}
+.ep-item:active { background: var(--surface2); }
+.ep-item.watched { border-color: rgba(62,207,106,0.3); }
+.ep-check {
+  width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all .15s; color: transparent;
+}
+.ep-item.watched .ep-check { background: var(--green); border-color: var(--green); color: #fff; }
+.ep-info { flex: 1; min-width: 0; }
+.ep-num { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.ep-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ep-date { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+/* ═══════════════════════════════
+   SETUP & SETTINGS
+═══════════════════════════════ */
+.setup-wrap { max-width: 440px; margin: 0 auto; padding: 24px 16px; }
+.setup-card {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius); padding: 24px 20px; margin-bottom: 12px;
+}
+.setup-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.setup-card p { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
+.setup-card a { color: var(--accent); text-decoration: none; }
+.input-group { margin-bottom: 12px; }
+.input-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.input-group input { padding-left: 12px; }
+.btn {
+  width: 100%; background: var(--accent); color: #0d0d0f;
+  border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+  padding: 12px; cursor: pointer; transition: background .15s, transform .1s;
+}
+.btn:active { background: var(--accent2); transform: scale(0.98); }
+.btn.secondary { background: var(--surface2); color: var(--text); border: 0.5px solid var(--border); margin-top: 8px; }
+.error-msg { color: var(--red); font-size: 13px; margin-top: 8px; display: none; }
+.success-msg { color: var(--green); font-size: 13px; margin-top: 8px; display: none; }
+
+/* ═══════════════════════════════
+   UTIL
+═══════════════════════════════ */
+.empty-state { text-align: center; padding: 40px 24px; color: var(--muted); }
+.empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+.empty-state p { font-size: 14px; }
+.empty-state small { font-size: 12px; margin-top: 4px; display: block; }
+.loading-dots { display: flex; justify-content: center; gap: 6px; padding: 32px; }
+.loading-dots span { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: bounce .8s infinite alternate; }
+.loading-dots span:nth-child(2) { animation-delay: .2s; }
+.loading-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes bounce { from{opacity:.3;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface2); border: 0.5px solid var(--border);
+  border-radius: 20px; padding: 10px 18px; font-size: 14px; font-weight: 500;
+  z-index: 999; transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.install-banner {
+  display: none; align-items: center; gap: 10px;
+  background: var(--surface); border: 0.5px solid var(--accent);
+  border-radius: 10px; padding: 12px 14px; margin: 8px 16px;
+}
+.install-banner.visible { display: flex; }
+.install-banner p { flex: 1; font-size: 13px; color: var(--muted); line-height: 1.4; }
+.install-banner p strong { color: var(--text); }
+.install-btn { background: var(--accent); color: #0d0d0f; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; padding: 8px 12px; cursor: pointer; flex-shrink: 0; }
+.dismiss-btn { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 0 2px; flex-shrink: 0; }
+.hide { display: none !important; }
+svg.check-icon { width: 14px; height: 14px; }
+
+/* ═══════════════════════════════
+   DESKTOP MEDIA QUERY
+═══════════════════════════════ */
+@media (min-width: 900px) {
+  body { overflow: hidden; }
+  .app-shell { flex-direction: row; }
+  .desktop-sidebar { display: flex; }
+  .main-content { max-width: none; margin: 0; }
+  .mobile-header { display: none; }
+
+  /* On desktop, show split view instead of views */
+  .desktop-split { display: flex; flex: 1; }
+  .view { display: none !important; }
+  .view.active { display: none !important; }
+
+  /* Detail panel slides in on desktop */
+  .detail-panel {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: 520px; background: var(--bg);
+    border-left: 0.5px solid var(--border);
+    z-index: 200; overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
   }
-  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .logo {
-    font-size: 19px; font-weight: 700; letter-spacing: -0.5px; color: var(--text);
-    cursor: pointer; background: none; border: none; padding: 0; font-family: inherit;
+  .detail-panel.open { transform: translateX(0); }
+  .detail-panel-header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(13,13,15,.95); backdrop-filter: blur(12px);
+    padding: 14px 20px; border-bottom: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
   }
-  .logo span { color: var(--accent); }
-  .header-actions { display: flex; align-items: center; gap: 8px; }
-  .sync-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--muted); flex-shrink: 0; transition: background .2s;
-  }
-  .sync-dot.online { background: var(--green); }
-  .sync-dot.syncing { background: var(--accent); animation: pulse 1s infinite; }
-  .sync-dot.offline { background: var(--red); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-  .back-btn {
-    display: none; align-items: center; gap: 6px;
+  .close-panel-btn {
     background: none; border: none; color: var(--accent);
-    font-size: 15px; font-weight: 500; cursor: pointer; padding: 4px 0;
+    font-size: 15px; font-weight: 500; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
   }
-  .back-btn svg { width: 18px; height: 18px; }
-  .search-wrap { position: relative; }
-  .search-wrap svg {
-    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-    width: 18px; height: 18px; color: var(--muted); pointer-events: none;
-  }
-  input[type=search], input[type=text], input[type=password] {
-    width: 100%; background: var(--surface2);
-    border: 0.5px solid var(--border); border-radius: 10px;
-    color: var(--text); font-size: 15px; padding: 10px 12px 10px 40px;
-    outline: none; -webkit-appearance: none; transition: border-color .15s;
-  }
-  input:focus { border-color: var(--accent); }
-  input::placeholder { color: var(--muted); }
-  input[type=search]::-webkit-search-cancel-button { display: none; }
-
-  .view { display: none; padding: 16px; }
-  .view.active { display: block; }
-
-  .setup-card {
-    background: var(--surface); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 24px 20px; margin-top: 24px;
-  }
-  .setup-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-  .setup-card p { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
-  .setup-card a { color: var(--accent); text-decoration: none; }
-  .input-group { margin-bottom: 12px; }
-  .input-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-  .input-group input { padding-left: 12px; }
-  .btn {
-    width: 100%; background: var(--accent); color: #0d0d0f;
-    border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
-    padding: 12px; cursor: pointer; transition: background .15s, transform .1s;
-  }
-  .btn:active { background: var(--accent2); transform: scale(0.98); }
-  .btn.secondary {
-    background: var(--surface2); color: var(--text);
-    border: 0.5px solid var(--border); margin-top: 8px;
-  }
-  .error-msg { color: var(--red); font-size: 13px; margin-top: 8px; display: none; }
-  .success-msg { color: var(--green); font-size: 13px; margin-top: 8px; display: none; }
-
-  .section-title {
-    font-size: 13px; font-weight: 600; color: var(--muted);
-    text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px;
-  }
-  .series-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-  .series-card {
-    position: relative; border-radius: 10px; overflow: hidden;
-    cursor: pointer; aspect-ratio: 2/3; background: var(--surface2);
-    transition: transform .15s;
-  }
-  .series-card:active { transform: scale(0.95); }
-  .series-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .series-card .no-img {
-    width: 100%; height: 100%; display: flex;
-    align-items: center; justify-content: center; font-size: 32px; color: var(--muted);
-  }
-  .series-card .card-info {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    background: linear-gradient(transparent, rgba(0,0,0,0.88));
-    padding: 24px 8px 8px;
-  }
-  .series-card .card-title { font-size: 11px; font-weight: 600; line-height: 1.3; color: #fff; }
-  .series-card .progress-bar {
-    height: 3px; background: rgba(255,255,255,0.2);
-    border-radius: 2px; margin-top: 5px; overflow: hidden;
-  }
-  .series-card .progress-fill {
-    height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s;
-  }
-  .series-card .done-badge {
-    position: absolute; top: 6px; right: 6px;
-    background: var(--green); color: #fff; border-radius: 50%;
-    width: 22px; height: 22px; display: none;
-    align-items: center; justify-content: center; font-size: 13px;
-  }
-
-  .search-results { margin-top: 4px; }
-  .result-item {
-    display: flex; align-items: center; gap: 12px; padding: 10px;
-    background: var(--surface); border: 0.5px solid var(--border);
-    border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: background .1s;
-  }
-  .result-item:active { background: var(--surface2); }
-  .result-img {
-    width: 44px; height: 66px; border-radius: 6px;
-    object-fit: cover; background: var(--surface2); flex-shrink: 0;
-  }
-  .result-img.no-img {
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; color: var(--muted);
-  }
-  .result-info { flex: 1; min-width: 0; }
-  .result-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .result-year { font-size: 13px; color: var(--muted); margin-top: 2px; }
-  .result-add {
-    background: var(--accent); color: #0d0d0f;
-    border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
-    padding: 7px 13px; cursor: pointer; flex-shrink: 0;
-  }
-  .result-add.added { background: var(--surface2); color: var(--muted); border: 0.5px solid var(--border); }
-
-  .serie-hero { position: relative; height: 200px; overflow: hidden; margin: -16px -16px 0; }
-  .serie-hero img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.4); }
-  .serie-hero-info {
-    position: absolute; bottom: 16px; left: 16px; right: 16px;
-    display: flex; align-items: flex-end; gap: 12px;
-  }
-  .serie-poster {
-    width: 72px; height: 108px; border-radius: 8px; object-fit: cover;
-    flex-shrink: 0; box-shadow: 0 4px 20px rgba(0,0,0,.6);
-  }
-  .serie-hero-text h1 { font-size: 20px; font-weight: 700; line-height: 1.2; margin-bottom: 4px; }
-  .serie-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
-  .stat-pill {
-    font-size: 12px; background: rgba(255,255,255,0.12);
-    border-radius: 20px; padding: 3px 9px; color: rgba(255,255,255,0.8);
-  }
-  .stat-pill.accent { background: var(--accent); color: #0d0d0f; font-weight: 600; }
-
-  .progress-summary {
-    background: var(--surface); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 14px 16px;
-    margin: 16px 0 8px; display: flex; align-items: center; gap: 12px;
-  }
-  .progress-circle { width: 52px; height: 52px; flex-shrink: 0; }
-  .progress-text { flex: 1; }
-  .progress-text strong { font-size: 15px; font-weight: 600; }
-  .progress-text span { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
-  .mark-all-btn {
-    background: none; border: 0.5px solid var(--border);
-    border-radius: 8px; color: var(--text); font-size: 12px; padding: 6px 10px; cursor: pointer;
-  }
-  .mark-all-btn:active { background: var(--surface2); }
-
-  /* FIX: scrollable season tabs */
-  .season-tabs {
-    display: flex; gap: 8px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-  .season-tabs::-webkit-scrollbar { height: 5px; }
-  .season-tabs::-webkit-scrollbar-track { background: transparent; }
-  .season-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-  .season-tabs::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-  .season-tab {
-    background: var(--surface2); border: 0.5px solid var(--border);
-    border-radius: 20px; color: var(--muted); font-size: 13px; font-weight: 500;
-    padding: 7px 14px; white-space: nowrap; cursor: pointer; transition: all .15s; flex-shrink: 0;
-  }
-  .season-tab.active { background: var(--accent); border-color: var(--accent); color: #0d0d0f; font-weight: 700; }
-
-  .ep-item {
-    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-    background: var(--surface); border-radius: 10px; margin-bottom: 6px;
-    cursor: pointer; transition: background .1s; border: 0.5px solid var(--border);
-  }
-  .ep-item:active { background: var(--surface2); }
-  .ep-item.watched { border-color: rgba(62,207,106,0.3); }
-  .ep-check {
-    width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; transition: all .15s; color: transparent;
-  }
-  .ep-item.watched .ep-check { background: var(--green); border-color: var(--green); color: #fff; }
-  .ep-info { flex: 1; min-width: 0; }
-  .ep-num { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
-  .ep-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ep-date { font-size: 12px; color: var(--muted); margin-top: 1px; }
-
-  .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
-  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-state p { font-size: 15px; }
-  .empty-state small { font-size: 13px; margin-top: 6px; display: block; }
-
-  .loading-dots { display: flex; justify-content: center; gap: 6px; padding: 32px; }
-  .loading-dots span {
-    width: 8px; height: 8px; background: var(--accent); border-radius: 50%;
-    animation: bounce .8s infinite alternate;
-  }
-  .loading-dots span:nth-child(2) { animation-delay: .2s; }
-  .loading-dots span:nth-child(3) { animation-delay: .4s; }
-  @keyframes bounce { from { opacity:.3; transform:scale(0.7); } to { opacity:1; transform:scale(1); } }
-
-  .toast {
-    position: fixed; bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--surface2); border: 0.5px solid var(--border);
-    border-radius: 20px; padding: 10px 18px; font-size: 14px; font-weight: 500;
-    z-index: 999; transition: transform .25s cubic-bezier(.34,1.56,.64,1); white-space: nowrap;
-    max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
-  }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-
-  .install-banner {
-    display: none; align-items: center; gap: 10px;
-    background: var(--surface); border: 0.5px solid var(--accent);
-    border-radius: 10px; padding: 12px 14px; margin: 12px 0 4px;
-  }
-  .install-banner.visible { display: flex; }
-  .install-banner p { flex: 1; font-size: 13px; color: var(--muted); line-height: 1.4; }
-  .install-banner p strong { color: var(--text); }
-  .install-btn {
-    background: var(--accent); color: #0d0d0f; border: none;
-    border-radius: 8px; font-size: 13px; font-weight: 600;
-    padding: 8px 12px; cursor: pointer; flex-shrink: 0;
-  }
-  .dismiss-btn {
-    background: none; border: none; color: var(--muted);
-    font-size: 18px; cursor: pointer; padding: 0 2px; flex-shrink: 0;
-  }
-  .hide { display: none !important; }
-  svg.check-icon { width: 14px; height: 14px; }
-
-  .settings-section { margin-bottom: 20px; }
-  .settings-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-  .settings-section p.hint { font-size: 13px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+  .serie-hero { margin: 0; }
+}
 </style>
 </head>
 <body>
-
 <div class="toast" id="toast"></div>
 
-<!-- SETUP: Supabase config (alleen eerste keer per device) -->
-<div id="view-setup" class="view active" style="padding-top:24px">
-  <div class="setup-card">
-    <h2>Welkom bij serie.track 📺</h2>
-    <p>Verbind eenmalig met je Supabase-database om je series overal te kunnen bijhouden. Heb je deze al ingesteld op een ander apparaat? Vul dezelfde gegevens in.</p>
+<!-- ═══════════════════════════════
+     DESKTOP: sidebar + split panels
+════════════════════════════════ -->
+<div class="app-shell">
+  <!-- Desktop sidebar -->
+  <aside class="desktop-sidebar" id="desktop-sidebar">
+    <button class="logo" onclick="desktopGoHome()">serie<span>.</span>track</button>
+    <button class="sidebar-nav-btn active" id="db-nav-mine" onclick="desktopSwitchTab('mine')">
+      <span class="nav-icon">📺</span> Mijn lijst
+    </button>
+    <button class="sidebar-nav-btn" id="db-nav-imdb" onclick="desktopSwitchTab('imdb')">
+      <span class="nav-icon">⭐</span> IMDB Import
+    </button>
+    <div class="sidebar-bottom">
+      <div class="sidebar-sync-dot" id="desktop-sync-dot"></div>
+      <span class="sidebar-sync-label" id="desktop-sync-label">Lokaal</span>
+      <button class="sidebar-settings-btn" onclick="showMobileView('settings')" title="Instellingen">⚙</button>
+    </div>
+  </aside>
 
-    <div class="settings-section">
-      <h3>Supabase Project URL</h3>
-      <div class="input-group">
-        <input type="text" id="sb-url-input" placeholder="https://xxxxx.supabase.co">
+  <!-- Desktop split panels (only visible ≥900px) -->
+  <div class="desktop-split" id="desktop-split">
+    <!-- Left: Mijn lijst -->
+    <div class="split-panel" id="desktop-mine-panel">
+      <div class="split-panel-header">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h2>Mijn lijst</h2>
+        </div>
+        <div style="position:relative;margin-bottom:8px">
+          <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted);pointer-events:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="search" id="db-search-input" placeholder="Zoek een serie om toe te voegen…" style="padding-left:36px;font-size:14px">
+        </div>
+        <div class="filter-bar" style="padding:0;margin-top:4px">
+          <button class="filter-btn active" id="db-filter-all" onclick="setDesktopFilter('all')">Alles</button>
+          <button class="filter-btn" id="db-filter-watching" onclick="setDesktopFilter('watching')">👁️ Watching</button>
+          <button class="filter-btn" id="db-filter-waiting" onclick="setDesktopFilter('waiting')">⏳ Waiting</button>
+          <button class="filter-btn" id="db-filter-done" onclick="setDesktopFilter('done')">✓ Done</button>
+        </div>
+      </div>
+      <div class="split-panel-body" id="desktop-mine-body">
+        <div id="db-search-results-wrap" class="hide">
+          <div id="db-search-results"></div>
+          <div style="height:8px"></div>
+        </div>
+        <div id="desktop-series-grid"></div>
       </div>
     </div>
-    <div class="settings-section">
-      <h3>Supabase anon key</h3>
-      <div class="input-group">
-        <input type="password" id="sb-key-input" placeholder="eyJhbGci...">
-      </div>
-    </div>
-
-    <div class="error-msg" id="setup-error"></div>
-    <div class="success-msg" id="setup-success"></div>
-    <button class="btn" id="save-key-btn">Verbinden en beginnen</button>
-    <button class="btn secondary" id="skip-sync-btn">Skip — alleen lokaal opslaan</button>
-  </div>
-</div>
-
-<!-- HOME -->
-<div id="view-home" class="view">
-  <div class="header" id="home-header">
-    <div class="header-top">
-      <button class="logo" id="logo-btn">serie<span>.</span>track</button>
-      <div class="header-actions">
-        <div class="sync-dot" id="sync-dot" title="Sync status"></div>
-        <button class="btn secondary" id="settings-btn" style="width:auto;padding:6px 12px;font-size:13px;margin:0">⚙</button>
-      </div>
-    </div>
-    <div class="install-banner" id="install-banner">
-      <p><strong>Voeg toe aan homescreen</strong><br>Gebruik als app op je telefoon</p>
-      <button class="install-btn" id="install-btn">Installeer</button>
-      <button class="dismiss-btn" id="dismiss-btn">×</button>
-    </div>
-    <div class="search-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="search" id="search-input" placeholder="Zoek een serie…" autocomplete="off">
+    <!-- Right: IMDB Import -->
+    <div class="split-panel" id="desktop-imdb-panel" style="display:none">
+      <div class="split-panel-header"><h2>⭐ IMDB Import</h2></div>
+      <div class="split-panel-body" id="desktop-imdb-body"></div>
     </div>
   </div>
 
-  <div id="search-results-wrap" class="hide">
-    <div style="height:12px"></div>
-    <div id="search-results" class="search-results"></div>
-  </div>
-
-  <div id="my-series-wrap">
-    <div style="height:12px"></div>
-    <div class="section-title" id="my-series-label">Mijn series</div>
-    <div class="series-grid" id="series-grid"></div>
-    <div class="empty-state hide" id="empty-home">
-      <div class="icon">📺</div>
-      <p>Nog geen series toegevoegd</p>
-      <small>Zoek hierboven naar je favoriete serie</small>
-    </div>
-  </div>
-</div>
-
-<!-- DETAIL -->
-<div id="view-detail" class="view">
-  <div class="header" id="detail-header">
-    <div class="header-top">
-      <button class="back-btn" id="back-btn" style="display:flex">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-        Terug
+  <!-- Desktop detail slide-in panel -->
+  <div class="detail-panel" id="desktop-detail-panel">
+    <div class="detail-panel-header">
+      <button class="close-panel-btn" onclick="closeDesktopDetail()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px"><path d="M15 18l-6-6 6-6"/></svg>
+        Sluiten
       </button>
-      <button class="btn" id="remove-series-btn" style="width:auto;padding:6px 12px;font-size:13px;margin:0;background:var(--surface2);color:var(--red);border:0.5px solid var(--border)">Verwijder</button>
+      <button style="background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;padding:6px 10px;border:0.5px solid var(--border);border-radius:8px" onclick="removeCurrentSerie()">Verwijder</button>
     </div>
+    <div id="desktop-detail-content"></div>
   </div>
-  <div id="detail-content"></div>
-</div>
 
-<!-- SETTINGS (apart scherm voor wijzigen sync-gegevens) -->
-<div id="view-settings" class="view">
-  <div class="header">
-    <div class="header-top">
-      <button class="back-btn" id="settings-back-btn" style="display:flex">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-        Terug
-      </button>
+  <!-- Mobile main content -->
+  <div class="main-content" id="mobile-main">
+    <!-- Setup view -->
+    <div id="view-setup" class="view active">
+      <div class="setup-wrap">
+        <div class="setup-card">
+          <h2>Welkom bij serie.track 📺</h2>
+          <p>Verbind eenmalig met je Supabase-database om je series overal bij te houden. Heb je al een account op een ander apparaat? Vul dezelfde gegevens in.</p>
+          <div class="input-group">
+            <label>Supabase Project URL</label>
+            <input type="text" id="sb-url-input" placeholder="https://xxxxx.supabase.co">
+          </div>
+          <div class="input-group">
+            <label>Supabase anon key</label>
+            <input type="password" id="sb-key-input" placeholder="eyJhbGci...">
+          </div>
+          <div class="error-msg" id="setup-error"></div>
+          <button class="btn" id="save-key-btn">Verbinden en beginnen</button>
+          <button class="btn secondary" id="skip-sync-btn">Skip — alleen lokaal opslaan</button>
+        </div>
+      </div>
     </div>
-  </div>
-  <div style="padding:16px">
-    <div class="settings-section">
-      <h3>Sync-status</h3>
-      <p class="hint" id="settings-sync-status">Niet verbonden</p>
+
+    <!-- Home view -->
+    <div id="view-home" class="view">
+      <div class="mobile-header">
+        <div class="mobile-header-top">
+          <button class="logo-btn" id="logo-btn">serie<span>.</span>track</button>
+          <div class="header-actions">
+            <div class="sync-dot" id="sync-dot"></div>
+            <button class="btn secondary" id="settings-btn" style="width:auto;padding:6px 12px;font-size:13px;margin:0">⚙</button>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active" id="tab-mine" onclick="switchTab('mine')">
+            <span class="tab-icon">📺</span> Mijn lijst
+          </button>
+          <button class="tab-btn" id="tab-imdb" onclick="switchTab('imdb')">
+            <span class="tab-icon">⭐</span> IMDB Import
+          </button>
+        </div>
+      </div>
+      <div class="install-banner" id="install-banner">
+        <p><strong>Voeg toe aan homescreen</strong><br>Gebruik als app op je telefoon</p>
+        <button class="install-btn" id="install-btn">Installeer</button>
+        <button class="dismiss-btn" id="dismiss-btn">×</button>
+      </div>
+
+      <!-- Tab: Mijn lijst -->
+      <div id="tab-content-mine">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="search" id="search-input" placeholder="Zoek een serie om toe te voegen…" autocomplete="off">
+        </div>
+        <div id="search-results-wrap" class="hide">
+          <div class="search-results" id="search-results"></div>
+        </div>
+        <div id="my-series-content">
+          <div class="filter-bar">
+            <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">Alles</button>
+            <button class="filter-btn" id="filter-watching" onclick="setFilter('watching')">👁️ Watching</button>
+            <button class="filter-btn" id="filter-waiting" onclick="setFilter('waiting')">⏳ Waiting</button>
+            <button class="filter-btn" id="filter-done" onclick="setFilter('done')">✓ Done</button>
+          </div>
+          <div class="content-pad" id="series-container"></div>
+        </div>
+      </div>
+
+      <!-- Tab: IMDB Import -->
+      <div id="tab-content-imdb" class="hide">
+        <div class="import-pad" id="import-content"></div>
+      </div>
     </div>
-    <div class="settings-section">
-      <h3>Supabase Project URL</h3>
-      <div class="input-group"><input type="text" id="settings-sb-url" placeholder="https://xxxxx.supabase.co"></div>
+
+    <!-- Detail view (mobile) -->
+    <div id="view-detail" class="view">
+      <div class="mobile-header">
+        <div class="mobile-header-top">
+          <button class="back-btn" id="back-btn" style="display:flex">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            Terug
+          </button>
+          <button id="remove-series-btn" style="background:none;border:0.5px solid var(--border);border-radius:8px;color:var(--red);font-size:13px;padding:6px 12px;cursor:pointer">Verwijder</button>
+        </div>
+      </div>
+      <div id="detail-content"></div>
     </div>
-    <div class="settings-section">
-      <h3>Supabase anon key</h3>
-      <div class="input-group"><input type="password" id="settings-sb-key" placeholder="eyJhbGci..."></div>
+
+    <!-- Settings view -->
+    <div id="view-settings" class="view">
+      <div class="mobile-header">
+        <div class="mobile-header-top">
+          <button class="back-btn" id="settings-back-btn" style="display:flex">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            Terug
+          </button>
+        </div>
+      </div>
+      <div class="setup-wrap">
+        <div class="setup-card">
+          <h2>Sync-instellingen</h2>
+          <p id="settings-sync-status">Niet verbonden</p>
+          <div class="input-group">
+            <label>Supabase Project URL</label>
+            <input type="text" id="settings-sb-url" placeholder="https://xxxxx.supabase.co">
+          </div>
+          <div class="input-group">
+            <label>Supabase anon key</label>
+            <input type="password" id="settings-sb-key" placeholder="eyJhbGci...">
+          </div>
+          <div class="error-msg" id="settings-error"></div>
+          <div class="success-msg" id="settings-success"></div>
+          <button class="btn" id="settings-save-btn">Opslaan</button>
+          <button class="btn secondary" id="settings-disconnect-btn">Sync loskoppelen</button>
+        </div>
+      </div>
     </div>
-    <div class="error-msg" id="settings-error"></div>
-    <div class="success-msg" id="settings-success"></div>
-    <button class="btn" id="settings-save-btn">Opslaan</button>
-    <button class="btn secondary" id="settings-disconnect-btn">Sync loskoppelen</button>
-  </div>
-</div>
+  </div><!-- /mobile-main -->
+</div><!-- /app-shell -->
 
 <script>
+// ═══ CONSTANTS ═══
 const STORAGE_KEY = 'serietracker_data';
-const SB_URL_KEY = 'serietracker_sb_url';
+const SB_URL_KEY  = 'serietracker_sb_url';
 const SB_ANON_KEY = 'serietracker_sb_key';
-
-// TMDB key is ingebakken — gebruiker hoeft niets in te voeren
 const TMDB_API_KEY = 'f2ae2d1802817ae03f0e4a70f5a163b0';
 const TMDB_IMG = 'https://image.tmdb.org/t/p/';
 
-let myData = {};
-let currentSerieId = null;
+// ═══ STATE ═══
+let myData       = {}; // { [id]: { id,name,poster,backdrop,totalEps,seasons,watchedEps:Set,status } }
+let currentId    = null;
 let currentSeason = 1;
+let seasonCache  = {};
 let searchTimeout = null;
-let seasonCache = {};
 let deferredPrompt = null;
-let sbUrl = '';
-let sbKey = '';
+let sbUrl = '', sbKey = '';
 let syncDebounce = null;
+let activeFilter = 'all';
+let activeTab    = 'mine';
+let isDesktop    = false;
+let importedLists = []; // [{ listName, items:[{imdbId,title,year,type,poster}] }]
+let importSearchDebounce = null;
 
-// ── Local persistence (cache/fallback) ──
+// ═══ DETECT DESKTOP ═══
+function detectLayout() {
+  isDesktop = window.innerWidth >= 900;
+}
+window.addEventListener('resize', () => { detectLayout(); applyLayout(); });
+
+function applyLayout() {
+  detectLayout();
+  if (isDesktop) {
+    // Render desktop panels
+    renderDesktopMinePanel();
+    renderDesktopImdbPanel();
+  }
+}
+
+// ═══ LOCAL PERSISTENCE ═══
 function saveLocal() {
   const out = {};
-  for (const [id, s] of Object.entries(myData)) out[id] = { ...s, watchedEps: [...s.watchedEps] };
+  for (const [id, s] of Object.entries(myData))
+    out[id] = { ...s, watchedEps: [...s.watchedEps] };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(out));
 }
 function loadLocal() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return;
   const parsed = JSON.parse(raw);
-  for (const [id, s] of Object.entries(parsed)) myData[id] = { ...s, watchedEps: new Set(s.watchedEps) };
+  for (const [id, s] of Object.entries(parsed))
+    myData[id] = { ...s, watchedEps: new Set(s.watchedEps), status: s.status || 'watching' };
 }
 
-// ── Supabase sync ──
+// ═══ SUPABASE ═══
 function hasSync() { return !!(sbUrl && sbKey); }
-
 function setSyncStatus(state) {
-  // state: 'online' | 'syncing' | 'offline' | 'none'
-  const dot = document.getElementById('sync-dot');
-  if (!dot) return;
-  dot.classList.remove('online','syncing','offline');
-  if (state !== 'none') dot.classList.add(state);
-  const titles = { online: 'Gesynchroniseerd', syncing: 'Synchroniseren…', offline: 'Geen verbinding', none: 'Lokaal opslaan (geen sync)' };
-  dot.title = titles[state] || '';
+  ['sync-dot','desktop-sync-dot'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('online','syncing','offline');
+    if (state !== 'none') el.classList.add(state);
+  });
+  const lbl = document.getElementById('desktop-sync-label');
+  if (lbl) lbl.textContent = state === 'online' ? 'Gesynchroniseerd' : state === 'syncing' ? 'Synchroniseren…' : state === 'offline' ? 'Geen verbinding' : 'Lokaal';
 }
-
 async function sbFetch(path, opts = {}) {
   const url = sbUrl.replace(/\/$/, '') + '/rest/v1' + path;
-  const headers = {
-    'apikey': sbKey,
-    'Authorization': 'Bearer ' + sbKey,
-    'Content-Type': 'application/json',
-    ...(opts.headers || {})
-  };
+  const headers = { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': 'application/json', ...(opts.headers||{}) };
   const r = await fetch(url, { ...opts, headers });
-  if (!r.ok) {
-    const txt = await r.text().catch(() => '');
-    throw new Error('Supabase ' + r.status + ': ' + txt);
-  }
+  if (!r.ok) throw new Error('Supabase ' + r.status);
   return r.status === 204 ? null : r.json();
 }
-
 async function testSupabaseConnection(url, key) {
-  const testUrl = url.replace(/\/$/, '') + '/rest/v1/series?select=id&limit=1';
-  const r = await fetch(testUrl, { headers: { 'apikey': key, 'Authorization': 'Bearer ' + key } });
+  const r = await fetch(url.replace(/\/$/, '') + '/rest/v1/series?select=id&limit=1', {
+    headers: { 'apikey': key, 'Authorization': 'Bearer ' + key }
+  });
   if (!r.ok) throw new Error('Status ' + r.status);
-  return true;
 }
-
 async function pullFromCloud() {
   if (!hasSync()) return;
   setSyncStatus('syncing');
   try {
     const rows = await sbFetch('/series?select=*');
-    const cloudData = {};
+    myData = {};
     for (const row of rows) {
-      cloudData[row.id] = {
-        id: row.id, name: row.name, poster: row.poster || '', backdrop: row.backdrop || '',
-        totalEps: row.total_eps || 0, seasons: row.seasons || 1,
-        watchedEps: new Set(row.watched_eps || [])
-      };
+      myData[row.id] = { id: row.id, name: row.name, poster: row.poster||'', backdrop: row.backdrop||'',
+        totalEps: row.total_eps||0, seasons: row.seasons||1,
+        watchedEps: new Set(row.watched_eps||[]), status: row.status||'watching' };
     }
-    myData = cloudData;
-    saveLocal();
-    setSyncStatus('online');
-  } catch (e) {
-    console.error('Pull failed', e);
-    setSyncStatus('offline');
-  }
+    saveLocal(); setSyncStatus('online');
+  } catch(e) { console.error(e); setSyncStatus('offline'); }
 }
-
-async function pushSerieToCloud(id) {
+async function pushSerie(id) {
   if (!hasSync()) return;
-  const s = myData[id];
-  if (!s) return;
+  const s = myData[id]; if (!s) return;
   setSyncStatus('syncing');
   try {
     await sbFetch('/series?on_conflict=id', {
       method: 'POST',
       headers: { 'Prefer': 'resolution=merge-duplicates' },
-      body: JSON.stringify([{
-        id: s.id, name: s.name, poster: s.poster, backdrop: s.backdrop,
-        total_eps: s.totalEps, seasons: s.seasons,
-        watched_eps: [...s.watchedEps], updated_at: new Date().toISOString()
-      }])
+      body: JSON.stringify([{ id: s.id, name: s.name, poster: s.poster, backdrop: s.backdrop,
+        total_eps: s.totalEps, seasons: s.seasons, watched_eps: [...s.watchedEps],
+        status: s.status || 'watching', updated_at: new Date().toISOString() }])
     });
     setSyncStatus('online');
-  } catch (e) {
-    console.error('Push failed', e);
-    setSyncStatus('offline');
-  }
+  } catch(e) { console.error(e); setSyncStatus('offline'); }
 }
-
-async function deleteSerieFromCloud(id) {
+async function deleteSerie(id) {
   if (!hasSync()) return;
-  try {
-    await sbFetch('/series?id=eq.' + encodeURIComponent(id), { method: 'DELETE' });
-  } catch (e) { console.error('Delete sync failed', e); }
+  try { await sbFetch('/series?id=eq.'+encodeURIComponent(id), { method:'DELETE' }); } catch(e) {}
 }
-
 function queueSync(id) {
   clearTimeout(syncDebounce);
-  syncDebounce = setTimeout(() => pushSerieToCloud(id), 600);
+  syncDebounce = setTimeout(() => pushSerie(id), 600);
 }
+function save(id) { saveLocal(); if (id) queueSync(id); }
 
-function save(id) {
-  saveLocal();
-  if (id) queueSync(id);
-}
-
-// ── Views ──
-function showView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-  window.scrollTo(0, 0);
-}
-
-function goHome() { showView('home'); renderHomeGrid(); }
-
-// ── Toast ──
+// ═══ TOAST ═══
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-// ── TMDB ──
+// ═══ VIEWS (mobile) ═══
+function showMobileView(name) {
+  if (isDesktop && name !== 'settings') return;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const el = document.getElementById('view-' + name);
+  if (el) el.classList.add('active');
+  window.scrollTo(0, 0);
+}
+function goHome() {
+  if (isDesktop) { closeDesktopDetail(); return; }
+  showMobileView('home');
+  renderMineTab();
+}
+
+// ═══ MOBILE TABS ═══
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('tab-mine').classList.toggle('active', tab === 'mine');
+  document.getElementById('tab-imdb').classList.toggle('active', tab === 'imdb');
+  document.getElementById('tab-content-mine').classList.toggle('hide', tab !== 'mine');
+  document.getElementById('tab-content-imdb').classList.toggle('hide', tab !== 'imdb');
+  if (tab === 'imdb') renderImportTab('import-content');
+}
+
+// ═══ DESKTOP TABS ═══
+function desktopSwitchTab(tab) {
+  document.getElementById('db-nav-mine').classList.toggle('active', tab === 'mine');
+  document.getElementById('db-nav-imdb').classList.toggle('active', tab === 'imdb');
+  const minePanel  = document.getElementById('desktop-mine-panel');
+  const imdbPanel  = document.getElementById('desktop-imdb-panel');
+  minePanel.style.display  = tab === 'mine' ? 'flex' : 'none';
+  imdbPanel.style.display  = tab === 'imdb' ? 'flex' : 'none';
+  if (tab === 'imdb') renderImportTab('desktop-imdb-body');
+}
+function desktopGoHome() { closeDesktopDetail(); desktopSwitchTab('mine'); }
+
+// ═══ FILTER ═══
+function setFilter(f) {
+  activeFilter = f;
+  ['all','watching','waiting','done'].forEach(x => {
+    const el = document.getElementById('filter-' + x);
+    if (el) el.classList.toggle('active', x === f);
+  });
+  renderMineTab();
+}
+function setDesktopFilter(f) {
+  activeFilter = f;
+  ['all','watching','waiting','done'].forEach(x => {
+    const el = document.getElementById('db-filter-' + x);
+    if (el) el.classList.toggle('active', x === f);
+  });
+  renderDesktopMinePanel();
+}
+
+// ═══ STATUS ═══
+const STATUS_META = {
+  watching: { icon: '👁️', label: 'Watching', cls: 'active-watching' },
+  waiting:  { icon: '⏳', label: 'Waiting',  cls: 'active-waiting'  },
+  done:     { icon: '✓',  label: 'Done',     cls: 'active-done'     },
+};
+function statusBadgeHtml(status) {
+  const m = STATUS_META[status] || STATUS_META.watching;
+  return `<div class="status-badge ${status}" title="${m.label}">${m.icon}</div>`;
+}
+
+// ═══ TMDB ═══
 async function tmdbFetch(path, params = {}) {
   const url = new URL('https://api.themoviedb.org/3' + path);
   url.searchParams.set('api_key', TMDB_API_KEY);
   url.searchParams.set('language', 'nl-NL');
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  for (const [k,v] of Object.entries(params)) url.searchParams.set(k, v);
   const r = await fetch(url);
   if (!r.ok) throw new Error('TMDB ' + r.status);
   return r.json();
 }
 async function searchSeries(q) {
   const d = await tmdbFetch('/search/tv', { query: q, page: 1 });
-  return d.results.slice(0, 8);
+  return d.results.slice(0, 6);
 }
 async function getSerieDetails(id) { return tmdbFetch('/tv/' + id); }
 async function getSeasonEpisodes(serieId, season) {
   const key = serieId + '_' + season;
   if (seasonCache[key]) return seasonCache[key];
   const data = await tmdbFetch('/tv/' + serieId + '/season/' + season);
-  const eps = (data.episodes || []).map(e => ({
+  const eps = (data.episodes||[]).map(e => ({
     id: serieId + '_s' + season + 'e' + e.episode_number,
     num: e.episode_number, name: e.name, date: e.air_date
   }));
@@ -574,93 +907,295 @@ async function getSeasonEpisodes(serieId, season) {
   return eps;
 }
 
-// ── Home grid ──
-function renderHomeGrid() {
-  const grid = document.getElementById('series-grid');
-  const empty = document.getElementById('empty-home');
-  const ids = Object.keys(myData);
-  if (ids.length === 0) { grid.innerHTML = ''; empty.classList.remove('hide'); return; }
-  empty.classList.add('hide');
-  grid.innerHTML = ids.map(id => {
-    const s = myData[id];
-    const pct = s.totalEps > 0 ? Math.round((s.watchedEps.size / s.totalEps) * 100) : 0;
-    const done = s.totalEps > 0 && s.watchedEps.size >= s.totalEps;
-    const img = s.poster
-      ? `<img src="${TMDB_IMG}w342${s.poster}" alt="${s.name}" loading="lazy">`
-      : `<div class="no-img">📺</div>`;
-    return `<div class="series-card" onclick="openSerie('${id}')">
-      ${img}
-      <div class="card-info">
-        <div class="card-title">${s.name}</div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-      </div>
-      <div class="done-badge" style="display:${done?'flex':'none'}">✓</div>
-    </div>`;
-  }).join('');
-  document.getElementById('my-series-label').textContent = `Mijn series (${ids.length})`;
-}
-
-// ── Search results ──
-function renderSearchResults(results, query) {
-  const wrap = document.getElementById('search-results-wrap');
-  const div = document.getElementById('search-results');
-  const myWrap = document.getElementById('my-series-wrap');
-  if (!query.trim()) { wrap.classList.add('hide'); myWrap.classList.remove('hide'); return; }
-  wrap.classList.remove('hide'); myWrap.classList.add('hide');
-  if (results.length === 0) {
-    div.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>Geen resultaten voor "${query}"</p></div>`;
-    return;
-  }
-  div.innerHTML = results.map(r => {
-    const year = r.first_air_date ? r.first_air_date.split('-')[0] : '';
-    const added = !!myData[r.id];
-    const img = r.poster_path
-      ? `<img class="result-img" src="${TMDB_IMG}w154${r.poster_path}" alt="${r.name}">`
-      : `<div class="result-img no-img">📺</div>`;
-    return `<div class="result-item">
-      ${img}
-      <div class="result-info">
-        <div class="result-name">${r.name}</div>
-        <div class="result-year">${year}${r.vote_average ? ' · ⭐ ' + r.vote_average.toFixed(1) : ''}</div>
-      </div>
-      <button class="result-add ${added?'added':''}" onclick="addSerie(${r.id},'${(r.name||'').replace(/'/g,"\\'")}','${r.poster_path||''}','${r.backdrop_path||''}');event.stopPropagation();" id="add-btn-${r.id}">
-        ${added ? 'Toegevoegd' : '+ Voeg toe'}
-      </button>
-    </div>`;
-  }).join('');
-}
-
-async function addSerie(id, name, poster, backdrop) {
-  const btn = document.getElementById('add-btn-' + id);
-  if (myData[id]) { showToast('Al in je lijst!'); return; }
+// ═══ ADD SERIE ═══
+async function addSerie(id, name, poster, backdrop, btnId) {
+  const btn = btnId ? document.getElementById(btnId) : null;
+  const sid = String(id);
+  if (myData[sid]) { showToast('Al in je lijst!'); return; }
   if (btn) { btn.textContent = '…'; btn.disabled = true; }
   try {
     const d = await getSerieDetails(id);
-    myData[id] = { id: String(id), name, poster: poster || d.poster_path || '', backdrop: backdrop || d.backdrop_path || '',
-      totalEps: d.number_of_episodes || 0, seasons: d.number_of_seasons || 1, watchedEps: new Set() };
-    save(String(id));
+    myData[sid] = { id: sid, name, poster: poster||d.poster_path||'',
+      backdrop: backdrop||d.backdrop_path||'', totalEps: d.number_of_episodes||0,
+      seasons: d.number_of_seasons||1, watchedEps: new Set(), status: 'watching' };
+    save(sid);
     if (btn) { btn.textContent = 'Toegevoegd'; btn.classList.add('added'); btn.disabled = false; }
     showToast(`"${name}" toegevoegd!`);
+    if (isDesktop) renderDesktopMinePanel(); else renderMineTab();
   } catch(e) {
     if (btn) { btn.textContent = '+ Voeg toe'; btn.disabled = false; }
     showToast('Fout bij ophalen, probeer opnieuw.');
   }
 }
 
-// ── Detail ──
-async function openSerie(id) {
-  currentSerieId = id; currentSeason = 1;
-  showView('detail');
+// ═══ RENDER SERIES GRID (shared) ═══
+function filteredAndSorted() {
+  const ids = Object.keys(myData);
+  const order = { watching: 0, waiting: 1, done: 2 };
+  return ids
+    .filter(id => activeFilter === 'all' || myData[id].status === activeFilter)
+    .sort((a, b) => (order[myData[a].status]||0) - (order[myData[b].status]||0));
+}
+
+function seriesGridHtml(ids) {
+  if (ids.length === 0) return `<div class="empty-state"><div class="icon">📺</div><p>Geen series gevonden</p><small>Zoek hierboven naar een serie om toe te voegen</small></div>`;
+  const groups = { watching: [], waiting: [], done: [] };
+  ids.forEach(id => { const s = myData[id]; (groups[s.status||'watching']).push(id); });
+  let html = '';
+  const labels = { watching: '👁️ Watching', waiting: '⏳ Waiting', done: '✓ Done' };
+  for (const [status, gids] of Object.entries(groups)) {
+    if (gids.length === 0) continue;
+    if (activeFilter === 'all') html += `<div class="section-header"><span class="section-title">${labels[status]}</span><span class="section-count">${gids.length}</span></div>`;
+    html += `<div class="series-grid">` + gids.map(id => seriesCardHtml(id)).join('') + `</div>`;
+  }
+  return html;
+}
+
+function seriesCardHtml(id) {
   const s = myData[id];
-  const content = document.getElementById('detail-content');
   const pct = s.totalEps > 0 ? Math.round((s.watchedEps.size / s.totalEps) * 100) : 0;
-  const heroSrc = (s.backdrop || s.poster) ? `${TMDB_IMG}w780${s.backdrop || s.poster}` : '';
+  const img = s.poster ? `<img src="${TMDB_IMG}w342${s.poster}" alt="${s.name}" loading="lazy">` : `<div class="no-img">📺</div>`;
+  const badge = statusBadgeHtml(s.status || 'watching');
+  return `<div class="series-card" onclick="openSerie('${id}')">
+    ${img}
+    ${badge}
+    <div class="card-info">
+      <div class="card-title">${s.name}</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+  </div>`;
+}
+
+function searchResultsHtml(results, inImport) {
+  return results.map(r => {
+    const year = r.first_air_date ? r.first_air_date.split('-')[0] : '';
+    const added = !!myData[r.id];
+    const img = r.poster_path ? `<img class="result-img" src="${TMDB_IMG}w154${r.poster_path}" alt="${r.name}">` : `<div class="result-img no-img">📺</div>`;
+    const btnId = 'add-btn-' + r.id + (inImport ? '-i' : '');
+    return `<div class="result-item">
+      ${img}
+      <div class="result-info">
+        <div class="result-name">${r.name}</div>
+        <div class="result-year">${year}${r.vote_average ? ' · ⭐ ' + r.vote_average.toFixed(1) : ''}</div>
+      </div>
+      <button class="result-add ${added?'added':''}" id="${btnId}"
+        onclick="addSerie(${r.id},'${(r.name||'').replace(/'/g,"\\'")}','${r.poster_path||''}','${r.backdrop_path||''}','${btnId}');event.stopPropagation();">
+        ${added ? 'Toegevoegd' : '+ Voeg toe'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+// ═══ MOBILE: render mine tab ═══
+function renderMineTab() {
+  const ids = filteredAndSorted();
+  document.getElementById('series-container').innerHTML = seriesGridHtml(ids);
+}
+
+// ═══ DESKTOP: render mine panel ═══
+function renderDesktopMinePanel() {
+  const ids = filteredAndSorted();
+  document.getElementById('desktop-series-grid').innerHTML = seriesGridHtml(ids);
+}
+
+// ═══ SEARCH (shared) ═══
+function handleSearchInput(q, resultsId, wrapId) {
+  clearTimeout(searchTimeout);
+  const wrap = document.getElementById(wrapId);
+  if (!q.trim()) { if (wrap) wrap.classList.add('hide'); return; }
+  if (wrap) wrap.classList.remove('hide');
+  document.getElementById(resultsId).innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  searchTimeout = setTimeout(async () => {
+    const results = await searchSeries(q).catch(() => []);
+    document.getElementById(resultsId).innerHTML = results.length
+      ? searchResultsHtml(results, false)
+      : `<div class="empty-state" style="padding:20px"><p>Geen resultaten</p></div>`;
+  }, 400);
+}
+
+// ═══ IMDB CSV IMPORT ═══
+function renderImportTab(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  let html = `<div class="import-card">
+    <h3>📥 IMDB lijst importeren</h3>
+    <p>IMDB heeft geen publieke API, maar je kunt je lijsten als CSV-bestand exporteren en hier inladen.</p>
+    <ol>
+      <li>Ga naar <a href="https://www.imdb.com/list/" target="_blank">imdb.com/list</a> en open een lijst</li>
+      <li>Klik op de drie puntjes (···) rechts van de lijstnaam</li>
+      <li>Kies <strong>"Export"</strong> — er wordt een .csv bestand gedownload</li>
+      <li>Upload dat bestand hieronder</li>
+    </ol>
+    <div class="upload-zone" id="upload-zone-${containerId}" onclick="document.getElementById('csv-file-input-${containerId}').click()">
+      <div class="upload-icon">📂</div>
+      <p>Tik hier om een <strong>IMDB CSV-bestand</strong> te selecteren</p>
+    </div>
+    <input type="file" accept=".csv" id="csv-file-input-${containerId}" onchange="handleCsvUpload(event,'${containerId}')">
+  </div>`;
+
+  // Show imported lists
+  if (importedLists.length > 0) {
+    for (const list of importedLists) {
+      const tvItems = list.items.filter(i => i.type === 'tvSeries' || i.type === 'tvMiniSeries' || i.type === 'TV Series' || !i.type || i.type === '');
+      html += `<div class="import-list-section">
+        <div class="import-list-title">${list.listName} (${tvItems.length} series)</div>`;
+      if (tvItems.length === 0) {
+        html += `<div class="empty-state" style="padding:16px"><p>Geen series gevonden in deze lijst</p><small>Controleer of je lijst TV-series bevat</small></div>`;
+      } else {
+        html += tvItems.map(item => {
+          const added = isInMyList(item);
+          const btnId = 'import-btn-' + item.imdbId + '-' + containerId;
+          const img = item.poster ? `<img class="import-item-img" src="${item.poster}" alt="${item.title}" onerror="this.style.display='none'">` : `<div class="import-item-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--muted)">📺</div>`;
+          return `<div class="import-item">
+            ${img}
+            <div class="import-item-info">
+              <div class="import-item-name">${item.title}</div>
+              <div class="import-item-meta">${item.year || ''}${item.rating ? ' · ⭐ ' + item.rating : ''}</div>
+            </div>
+            <button class="import-add-btn ${added ? 'added' : ''}" id="${btnId}"
+              onclick="addFromImdb('${item.imdbId}','${(item.title||'').replace(/'/g,"\\'")}','${containerId}')">
+              ${added ? 'Toegevoegd' : '→ Voeg toe'}
+            </button>
+          </div>`;
+        }).join('');
+      }
+      html += `</div>`;
+    }
+  }
+
+  el.innerHTML = html;
+
+  // Drag and drop
+  const zone = document.getElementById('upload-zone-' + containerId);
+  if (zone) {
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); const f = e.dataTransfer.files[0]; if (f) processCsvFile(f, containerId); });
+  }
+}
+
+function isInMyList(item) {
+  // Check by IMDB ID stored in meta, or by name fuzzy match
+  return Object.values(myData).some(s => s.imdbId === item.imdbId || s.name.toLowerCase() === (item.title||'').toLowerCase());
+}
+
+function handleCsvUpload(event, containerId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  processCsvFile(file, containerId);
+}
+
+function processCsvFile(file, containerId) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const parsed = parseImdbCsv(text, file.name);
+    // Merge with existing lists (replace if same name)
+    const idx = importedLists.findIndex(l => l.listName === parsed.listName);
+    if (idx >= 0) importedLists[idx] = parsed; else importedLists.push(parsed);
+    renderImportTab(containerId);
+    // Also re-render other tab if open
+    const otherId = containerId === 'import-content' ? 'desktop-imdb-body' : 'import-content';
+    const other = document.getElementById(otherId);
+    if (other && other.innerHTML.length > 0) renderImportTab(otherId);
+    showToast(`Lijst "${parsed.listName}" geladen (${parsed.items.length} items)`);
+  };
+  reader.readAsText(file);
+}
+
+function parseImdbCsv(text, filename) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
+  const items = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCsvLine(lines[i]);
+    if (cols.length < 3) continue;
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = (cols[idx]||'').replace(/^"|"$/g,'').trim(); });
+    const titleType = row['Title Type'] || row['titleType'] || row['type'] || '';
+    const isTV = /tv|series|mini/i.test(titleType) || titleType === '';
+    if (!isTV && titleType) continue;
+    items.push({
+      imdbId: row['Const'] || row['imdbID'] || '',
+      title: row['Title'] || row['primaryTitle'] || row['name'] || '',
+      year: row['Year'] || row['startYear'] || '',
+      rating: row['IMDb Rating'] || row['averageRating'] || '',
+      type: titleType,
+      poster: row['URL'] || ''  // IMDB CSV doesn't include posters but keep for future
+    });
+  }
+  // Use filename as list name (strip extension)
+  const listName = filename.replace(/\.csv$/i,'').replace(/_/g,' ');
+  return { listName, items };
+}
+
+function splitCsvLine(line) {
+  const result = []; let cur = ''; let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { inQuotes = !inQuotes; }
+    else if (line[i] === ',' && !inQuotes) { result.push(cur); cur = ''; }
+    else { cur += line[i]; }
+  }
+  result.push(cur);
+  return result;
+}
+
+async function addFromImdb(imdbId, title, containerId) {
+  const btnId = 'import-btn-' + imdbId + '-' + containerId;
+  const btn = document.getElementById(btnId);
+  if (btn) { btn.textContent = '…'; btn.disabled = true; }
+  try {
+    // Search TMDB by title to get full details + poster
+    const results = await searchSeries(title);
+    if (results.length === 0) throw new Error('Niet gevonden op TMDB');
+    const best = results[0];
+    const sid = String(best.id);
+    if (myData[sid]) { if (btn) { btn.textContent = 'Toegevoegd'; btn.classList.add('added'); btn.disabled = false; } showToast('Al in je lijst!'); return; }
+    const d = await getSerieDetails(best.id);
+    myData[sid] = { id: sid, name: best.name, poster: best.poster_path||'',
+      backdrop: best.backdrop_path||'', totalEps: d.number_of_episodes||0,
+      seasons: d.number_of_seasons||1, watchedEps: new Set(), status: 'waiting',
+      imdbId };
+    save(sid);
+    if (btn) { btn.textContent = 'Toegevoegd'; btn.classList.add('added'); btn.disabled = false; }
+    showToast(`"${best.name}" toegevoegd aan Waiting!`);
+    if (isDesktop) renderDesktopMinePanel(); else renderMineTab();
+  } catch(e) {
+    if (btn) { btn.textContent = '→ Voeg toe'; btn.disabled = false; }
+    showToast(`Kon "${title}" niet vinden op TMDB`);
+  }
+}
+
+// ═══ DETAIL VIEW ═══
+async function openSerie(id) {
+  currentId = id; currentSeason = 1;
+  if (isDesktop) {
+    const panel = document.getElementById('desktop-detail-panel');
+    panel.classList.add('open');
+    document.getElementById('desktop-detail-content').innerHTML = '<div class="loading-dots" style="padding-top:40px"><span></span><span></span><span></span></div>';
+    await renderDetailInto('desktop-detail-content', id);
+  } else {
+    showMobileView('detail');
+    document.getElementById('detail-content').innerHTML = '<div class="loading-dots" style="padding-top:40px"><span></span><span></span><span></span></div>';
+    await renderDetailInto('detail-content', id);
+  }
+}
+
+async function renderDetailInto(containerId, id) {
+  const s = myData[id];
+  const pct = s.totalEps > 0 ? Math.round((s.watchedEps.size / s.totalEps) * 100) : 0;
+  const heroSrc = (s.backdrop||s.poster) ? `${TMDB_IMG}w780${s.backdrop||s.poster}` : '';
   const heroHtml = heroSrc ? `<img src="${heroSrc}" alt="">` : `<div style="background:var(--surface2);height:100%"></div>`;
   const tabs = Array.from({length: s.seasons}, (_,i)=>i+1).map(n =>
-    `<button class="season-tab ${n===1?'active':''}" onclick="switchSeason(${n})" id="stab-${n}">S${n}</button>`
+    `<button class="season-tab ${n===1?'active':''}" onclick="switchSeason(${n},'${containerId}')" id="stab-${containerId}-${n}">S${n}</button>`
   ).join('');
   const circ = 2 * Math.PI * 22;
-  content.innerHTML = `
+  const statusBtns = Object.entries(STATUS_META).map(([val, m]) =>
+    `<button class="status-sel-btn ${s.status===val?'active-'+val:''}" id="ssel-${containerId}-${val}"
+      onclick="setSerieStatus('${id}','${val}','${containerId}')">${m.icon} ${m.label}</button>`
+  ).join('');
+
+  document.getElementById(containerId).innerHTML = `
     <div class="serie-hero">
       ${heroHtml}
       <div class="serie-hero-info">
@@ -670,44 +1205,59 @@ async function openSerie(id) {
           <div class="serie-stats">
             <span class="stat-pill">${s.seasons} seizoen${s.seasons!==1?'en':''}</span>
             <span class="stat-pill">${s.totalEps} afleveringen</span>
-            <span class="stat-pill accent" id="pct-pill">${pct}% gezien</span>
+            <span class="stat-pill accent" id="pct-pill-${containerId}">${pct}% gezien</span>
           </div>
         </div>
       </div>
     </div>
-    <div style="padding:16px">
-      <div class="progress-summary">
-        <svg class="progress-circle" viewBox="0 0 52 52">
-          <circle cx="26" cy="26" r="22" fill="none" stroke="var(--border)" stroke-width="4"/>
-          <circle cx="26" cy="26" r="22" fill="none" stroke="var(--accent)" stroke-width="4"
-            stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-pct/100)}"
-            stroke-linecap="round" transform="rotate(-90 26 26)" id="prog-circle"/>
-          <text x="26" y="30" text-anchor="middle" fill="var(--text)" font-size="12" font-weight="600" id="prog-text">${pct}%</text>
-        </svg>
-        <div class="progress-text">
-          <strong id="prog-label">${s.watchedEps.size} van ${s.totalEps} gezien</strong>
-          <span id="prog-sub">${s.totalEps - s.watchedEps.size} afleveringen resterend</span>
-        </div>
-        <button class="mark-all-btn" onclick="markAllSeason()">Alles ✓</button>
+    <div class="status-selector">${statusBtns}</div>
+    <div class="progress-summary">
+      <svg class="progress-circle" viewBox="0 0 52 52">
+        <circle cx="26" cy="26" r="22" fill="none" stroke="var(--border)" stroke-width="4"/>
+        <circle cx="26" cy="26" r="22" fill="none" stroke="var(--accent)" stroke-width="4"
+          stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-pct/100)}"
+          stroke-linecap="round" transform="rotate(-90 26 26)" id="prog-circle-${containerId}"/>
+        <text x="26" y="30" text-anchor="middle" fill="var(--text)" font-size="12" font-weight="600" id="prog-text-${containerId}">${pct}%</text>
+      </svg>
+      <div class="progress-text">
+        <strong id="prog-label-${containerId}">${s.watchedEps.size} van ${s.totalEps} gezien</strong>
+        <span id="prog-sub-${containerId}">${s.totalEps - s.watchedEps.size} resterend</span>
       </div>
-      <div class="season-tabs" id="season-tabs">${tabs}</div>
-      <div id="episode-list"><div class="loading-dots"><span></span><span></span><span></span></div></div>
+      <button class="mark-all-btn" onclick="markAllSeason('${containerId}')">Alles ✓</button>
+    </div>
+    <div class="season-tabs" id="season-tabs-${containerId}">${tabs}</div>
+    <div class="ep-list" id="ep-list-${containerId}">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
     </div>`;
-  await loadSeason(id, 1);
+
+  await loadSeason(id, 1, containerId);
 }
 
-async function loadSeason(serieId, season) {
-  const list = document.getElementById('episode-list');
-  if (!list) return;
-  list.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+function setSerieStatus(id, status, containerId) {
+  myData[id].status = status;
+  save(id);
+  // Update buttons
+  Object.keys(STATUS_META).forEach(val => {
+    const btn = document.getElementById(`ssel-${containerId}-${val}`);
+    if (!btn) return;
+    btn.className = 'status-sel-btn' + (status === val ? ' active-' + val : '');
+  });
+  if (isDesktop) renderDesktopMinePanel(); else renderMineTab();
+  showToast(`Status: ${STATUS_META[status].label}`);
+}
+
+async function loadSeason(id, season, containerId) {
+  const listEl = document.getElementById('ep-list-' + containerId);
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
   try {
-    const eps = await getSeasonEpisodes(serieId, season);
-    const s = myData[serieId];
-    if (eps.length === 0) { list.innerHTML = `<div class="empty-state"><p>Geen afleveringen gevonden</p></div>`; return; }
-    list.innerHTML = eps.map(ep => {
+    const eps = await getSeasonEpisodes(id, season);
+    const s = myData[id];
+    if (eps.length === 0) { listEl.innerHTML = `<div class="empty-state"><p>Geen afleveringen gevonden</p></div>`; return; }
+    listEl.innerHTML = eps.map(ep => {
       const watched = s.watchedEps.has(ep.id);
       const date = ep.date ? new Date(ep.date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '';
-      return `<div class="ep-item ${watched?'watched':''}" onclick="toggleEp('${ep.id}',this)" id="ep-${ep.id}">
+      return `<div class="ep-item ${watched?'watched':''}" onclick="toggleEp('${ep.id}','${id}','${containerId}',this)" id="ep-${containerId}-${ep.id}">
         <div class="ep-check">
           <svg class="check-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="2,7 5.5,11 12,3"/></svg>
         </div>
@@ -718,198 +1268,194 @@ async function loadSeason(serieId, season) {
         </div>
       </div>`;
     }).join('');
-    refreshSeasonTab(season, serieId, eps);
-  } catch(e) {
-    list.innerHTML = `<div class="empty-state"><p>Kon afleveringen niet laden.</p></div>`;
-  }
+    refreshSeasonTab(season, id, eps, containerId);
+  } catch(e) { listEl.innerHTML = `<div class="empty-state"><p>Kon afleveringen niet laden.</p></div>`; }
 }
 
-function refreshSeasonTab(season, serieId, eps) {
-  const s = myData[serieId];
-  const tab = document.getElementById('stab-' + season);
+function refreshSeasonTab(season, id, eps, containerId) {
+  const s = myData[id];
+  const tab = document.getElementById(`stab-${containerId}-${season}`);
   if (!tab) return;
   const done = eps.length > 0 && eps.every(ep => s.watchedEps.has(ep.id));
   tab.innerHTML = `S${season}${done?' ✓':''}`;
 }
 
-async function switchSeason(n) {
+async function switchSeason(n, containerId) {
   currentSeason = n;
-  document.querySelectorAll('.season-tab').forEach(t => t.classList.remove('active'));
-  const tab = document.getElementById('stab-' + n);
-  if (tab) { tab.classList.add('active'); tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }
-  await loadSeason(currentSerieId, n);
+  document.querySelectorAll(`#season-tabs-${containerId} .season-tab`).forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById(`stab-${containerId}-${n}`);
+  if (tab) { tab.classList.add('active'); tab.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' }); }
+  await loadSeason(currentId, n, containerId);
 }
 
-function toggleEp(epId, el) {
-  const s = myData[currentSerieId];
+function toggleEp(epId, serieId, containerId, el) {
+  const s = myData[serieId];
   if (s.watchedEps.has(epId)) s.watchedEps.delete(epId);
   else s.watchedEps.add(epId);
   el.classList.toggle('watched', s.watchedEps.has(epId));
-  save(currentSerieId); updateProgress();
-  const eps = seasonCache[currentSerieId + '_' + currentSeason] || [];
-  refreshSeasonTab(currentSeason, currentSerieId, eps);
+  save(serieId); updateProgress(serieId, containerId);
+  const eps = seasonCache[serieId + '_' + currentSeason] || [];
+  refreshSeasonTab(currentSeason, serieId, eps, containerId);
 }
 
-async function markAllSeason() {
-  const s = myData[currentSerieId];
-  const eps = await getSeasonEpisodes(currentSerieId, currentSeason);
+async function markAllSeason(containerId) {
+  const s = myData[currentId];
+  const eps = await getSeasonEpisodes(currentId, currentSeason);
   const allWatched = eps.every(ep => s.watchedEps.has(ep.id));
   for (const ep of eps) { if (allWatched) s.watchedEps.delete(ep.id); else s.watchedEps.add(ep.id); }
-  save(currentSerieId); updateProgress(); await loadSeason(currentSerieId, currentSeason);
-  showToast(allWatched ? 'Seizoen ongedaan gemaakt' : 'Seizoen als gezien gemarkeerd ✓');
+  save(currentId); updateProgress(currentId, containerId);
+  await loadSeason(currentId, currentSeason, containerId);
+  showToast(allWatched ? 'Ongedaan gemaakt' : 'Seizoen als gezien gemarkeerd ✓');
 }
 
-function updateProgress() {
-  const s = myData[currentSerieId];
+function updateProgress(id, containerId) {
+  const s = myData[id];
   const pct = s.totalEps > 0 ? Math.round((s.watchedEps.size / s.totalEps) * 100) : 0;
   const circ = 2 * Math.PI * 22;
-  const circle = document.getElementById('prog-circle');
-  const txt = document.getElementById('prog-text');
-  const label = document.getElementById('prog-label');
-  const sub = document.getElementById('prog-sub');
-  const pill = document.getElementById('pct-pill');
-  if (circle) circle.style.strokeDashoffset = circ * (1 - pct / 100);
+  const circle = document.getElementById('prog-circle-' + containerId);
+  const txt    = document.getElementById('prog-text-' + containerId);
+  const label  = document.getElementById('prog-label-' + containerId);
+  const sub    = document.getElementById('prog-sub-' + containerId);
+  const pill   = document.getElementById('pct-pill-' + containerId);
+  if (circle) circle.style.strokeDashoffset = circ * (1 - pct/100);
   if (txt) txt.textContent = pct + '%';
   if (label) label.textContent = `${s.watchedEps.size} van ${s.totalEps} gezien`;
-  if (sub) sub.textContent = `${s.totalEps - s.watchedEps.size} afleveringen resterend`;
+  if (sub) sub.textContent = `${s.totalEps - s.watchedEps.size} resterend`;
   if (pill) pill.textContent = pct + '% gezien';
 }
 
-// ── PWA Install ──
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault(); deferredPrompt = e;
-  const banner = document.getElementById('install-banner');
-  if (banner) banner.classList.add('visible');
-});
-
-// ── Settings screen logic ──
-function openSettingsScreen() {
-  document.getElementById('settings-sb-url').value = sbUrl;
-  document.getElementById('settings-sb-key').value = sbKey;
-  document.getElementById('settings-sync-status').textContent = hasSync()
-    ? 'Verbonden met Supabase — je data synchroniseert automatisch.'
-    : 'Niet verbonden. Data wordt alleen lokaal op dit apparaat opgeslagen.';
-  document.getElementById('settings-error').style.display = 'none';
-  document.getElementById('settings-success').style.display = 'none';
-  showView('settings');
+function closeDesktopDetail() {
+  document.getElementById('desktop-detail-panel').classList.remove('open');
 }
 
-// ── Init ──
+function removeCurrentSerie() {
+  if (!currentId) return;
+  const name = myData[currentId]?.name || 'Serie';
+  if (!confirm(`"${name}" verwijderen?`)) return;
+  const id = currentId;
+  delete myData[id]; saveLocal(); deleteSerie(id);
+  closeDesktopDetail();
+  if (isDesktop) renderDesktopMinePanel(); else goHome();
+  showToast(`"${name}" verwijderd`);
+}
+
+// ═══ SETUP / SETTINGS ═══
+async function connectSupabase(urlInput, keyInput, errId, successId, saveBtn) {
+  const url = document.getElementById(urlInput).value.trim();
+  const key = document.getElementById(keyInput).value.trim();
+  const err = document.getElementById(errId);
+  const ok  = document.getElementById(successId);
+  err.style.display = 'none'; if (ok) ok.style.display = 'none';
+  if (!url || !key) { err.textContent = 'Vul beide velden in.'; err.style.display = 'block'; return false; }
+  document.getElementById(saveBtn).textContent = 'Verbinden…';
+  try {
+    await testSupabaseConnection(url, key);
+    sbUrl = url; sbKey = key;
+    localStorage.setItem(SB_URL_KEY, url);
+    localStorage.setItem(SB_ANON_KEY, key);
+    localStorage.setItem('serietracker_configured', '1');
+    document.getElementById(saveBtn).textContent = saveBtn === 'save-key-btn' ? 'Verbinden en beginnen' : 'Opslaan';
+    return true;
+  } catch(e) {
+    err.textContent = 'Kon niet verbinden. Controleer URL en key.';
+    err.style.display = 'block';
+    document.getElementById(saveBtn).textContent = saveBtn === 'save-key-btn' ? 'Verbinden en beginnen' : 'Opslaan';
+    return false;
+  }
+}
+
+// ═══ INIT ═══
 function init() {
+  detectLayout();
   loadLocal();
   sbUrl = localStorage.getItem(SB_URL_KEY) || '';
   sbKey = localStorage.getItem(SB_ANON_KEY) || '';
-
   const everConfigured = localStorage.getItem('serietracker_configured') === '1';
 
   if (everConfigured) {
-    showView('home');
-    renderHomeGrid();
-    if (hasSync()) { setSyncStatus('syncing'); pullFromCloud().then(renderHomeGrid); }
-    else setSyncStatus('none');
+    if (!isDesktop) showMobileView('home');
+    if (hasSync()) { setSyncStatus('syncing'); pullFromCloud().then(() => { renderMineTab(); if (isDesktop) renderDesktopMinePanel(); }); }
+    else { setSyncStatus('none'); renderMineTab(); if (isDesktop) renderDesktopMinePanel(); }
   } else {
-    showView('setup');
+    if (!isDesktop) showMobileView('setup');
+    else { /* desktop: show setup as overlay on first run */ showMobileView('setup'); }
   }
 
-  // Setup: connect
+  // ── Setup ──
   document.getElementById('save-key-btn').addEventListener('click', async () => {
-    const url = document.getElementById('sb-url-input').value.trim();
-    const key = document.getElementById('sb-key-input').value.trim();
-    const err = document.getElementById('setup-error');
-    const ok = document.getElementById('setup-success');
-    err.style.display = 'none'; ok.style.display = 'none';
-    if (!url || !key) { err.textContent = 'Vul beide velden in.'; err.style.display = 'block'; return; }
-    document.getElementById('save-key-btn').textContent = 'Verbinden…';
-    try {
-      await testSupabaseConnection(url, key);
-      sbUrl = url; sbKey = key;
-      localStorage.setItem(SB_URL_KEY, url);
-      localStorage.setItem(SB_ANON_KEY, key);
-      localStorage.setItem('serietracker_configured', '1');
-      document.getElementById('save-key-btn').textContent = 'Verbinden en beginnen';
-      showView('home');
+    const ok = await connectSupabase('sb-url-input','sb-key-input','setup-error',null,'save-key-btn');
+    if (ok) {
+      localStorage.setItem('serietracker_configured','1');
+      if (!isDesktop) showMobileView('home');
       setSyncStatus('syncing');
       await pullFromCloud();
-      renderHomeGrid();
-      showToast('Verbonden! Je series synchroniseren nu.');
-    } catch (e) {
-      err.textContent = 'Kon niet verbinden. Controleer URL en key (zie SUPABASE_SETUP.md).';
-      err.style.display = 'block';
-      document.getElementById('save-key-btn').textContent = 'Verbinden en beginnen';
+      renderMineTab(); if (isDesktop) renderDesktopMinePanel();
+      showToast('Verbonden! Series worden gesynchroniseerd.');
     }
   });
-
   document.getElementById('skip-sync-btn').addEventListener('click', () => {
-    localStorage.setItem('serietracker_configured', '1');
-    showView('home'); renderHomeGrid(); setSyncStatus('none');
-    showToast('Lokaal opslaan actief — geen sync tussen apparaten.');
+    localStorage.setItem('serietracker_configured','1');
+    if (!isDesktop) showMobileView('home');
+    renderMineTab(); if (isDesktop) renderDesktopMinePanel();
+    setSyncStatus('none');
+    showToast('Lokaal opslaan actief.');
   });
 
-  // Logo -> terug naar home
+  // ── Mobile logo / back ──
   document.getElementById('logo-btn').addEventListener('click', goHome);
+  document.getElementById('back-btn').addEventListener('click', goHome);
+  document.getElementById('remove-series-btn').addEventListener('click', removeCurrentSerie);
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    document.getElementById('settings-sb-url').value = sbUrl;
+    document.getElementById('settings-sb-key').value = sbKey;
+    document.getElementById('settings-sync-status').textContent = hasSync() ? 'Verbonden met Supabase.' : 'Niet verbonden — lokaal opslaan.';
+    showMobileView('settings');
+  });
+  document.getElementById('settings-back-btn').addEventListener('click', () => { showMobileView('home'); });
 
-  // Settings button (gear) -> settings screen
-  document.getElementById('settings-btn').addEventListener('click', openSettingsScreen);
-  document.getElementById('settings-back-btn').addEventListener('click', goHome);
-
+  // ── Settings save ──
   document.getElementById('settings-save-btn').addEventListener('click', async () => {
-    const url = document.getElementById('settings-sb-url').value.trim();
-    const key = document.getElementById('settings-sb-key').value.trim();
-    const err = document.getElementById('settings-error');
-    const ok = document.getElementById('settings-success');
-    err.style.display = 'none'; ok.style.display = 'none';
-    if (!url || !key) { err.textContent = 'Vul beide velden in, of gebruik "Sync loskoppelen".'; err.style.display = 'block'; return; }
-    document.getElementById('settings-save-btn').textContent = 'Controleren…';
-    try {
-      await testSupabaseConnection(url, key);
-      sbUrl = url; sbKey = key;
-      localStorage.setItem(SB_URL_KEY, url);
-      localStorage.setItem(SB_ANON_KEY, key);
-      document.getElementById('settings-save-btn').textContent = 'Opslaan';
-      ok.textContent = 'Verbonden! Synchroniseren…'; ok.style.display = 'block';
-      setSyncStatus('syncing');
-      await pullFromCloud();
-      renderHomeGrid();
-      showToast('Sync-instellingen opgeslagen.');
-    } catch (e) {
-      err.textContent = 'Kon niet verbinden. Controleer de gegevens.';
-      err.style.display = 'block';
-      document.getElementById('settings-save-btn').textContent = 'Opslaan';
+    const ok = await connectSupabase('settings-sb-url','settings-sb-key','settings-error','settings-success','settings-save-btn');
+    if (ok) {
+      const suc = document.getElementById('settings-success');
+      suc.textContent = 'Verbonden!'; suc.style.display = 'block';
+      setSyncStatus('syncing'); await pullFromCloud(); renderMineTab(); if (isDesktop) renderDesktopMinePanel();
     }
   });
-
   document.getElementById('settings-disconnect-btn').addEventListener('click', () => {
-    if (!confirm('Sync loskoppelen? Je data blijft lokaal op dit apparaat staan, maar synct niet meer.')) return;
+    if (!confirm('Sync loskoppelen? Data blijft lokaal staan.')) return;
     sbUrl = ''; sbKey = '';
-    localStorage.removeItem(SB_URL_KEY);
-    localStorage.removeItem(SB_ANON_KEY);
-    document.getElementById('settings-sb-url').value = '';
-    document.getElementById('settings-sb-key').value = '';
-    setSyncStatus('none');
-    showToast('Sync losgekoppeld.');
+    localStorage.removeItem(SB_URL_KEY); localStorage.removeItem(SB_ANON_KEY);
+    setSyncStatus('none'); showToast('Sync losgekoppeld.');
   });
 
-  // Search
+  // ── Mobile search ──
   document.getElementById('search-input').addEventListener('input', e => {
-    const q = e.target.value; clearTimeout(searchTimeout);
-    if (!q.trim()) { renderSearchResults([], ''); return; }
-    searchTimeout = setTimeout(async () => { renderSearchResults(await searchSeries(q), q); }, 400);
+    const q = e.target.value;
+    const wrap = document.getElementById('search-results-wrap');
+    const mc = document.getElementById('my-series-content');
+    if (!q.trim()) { wrap.classList.add('hide'); mc.classList.remove('hide'); return; }
+    wrap.classList.remove('hide'); mc.classList.add('hide');
+    handleSearchInput(q, 'search-results', 'search-results-wrap');
   });
 
-  document.getElementById('back-btn').addEventListener('click', goHome);
-
-  document.getElementById('remove-series-btn').addEventListener('click', () => {
-    if (!currentSerieId) return;
-    const name = myData[currentSerieId]?.name || 'Serie';
-    if (!confirm(`"${name}" verwijderen uit je lijst?`)) return;
-    const idToDelete = currentSerieId;
-    delete myData[idToDelete]; saveLocal();
-    deleteSerieFromCloud(idToDelete);
-    goHome(); showToast(`"${name}" verwijderd`);
+  // ── Desktop search ──
+  document.getElementById('db-search-input').addEventListener('input', e => {
+    const q = e.target.value;
+    const wrap = document.getElementById('db-search-results-wrap');
+    const grid = document.getElementById('desktop-series-grid');
+    if (!q.trim()) { wrap.classList.add('hide'); grid.style.display = ''; return; }
+    wrap.classList.remove('hide'); grid.style.display = 'none';
+    handleSearchInput(q, 'db-search-results', 'db-search-results-wrap');
   });
 
-  const installBtn = document.getElementById('install-btn');
-  if (installBtn) installBtn.addEventListener('click', async () => {
+  // ── PWA install ──
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); deferredPrompt = e;
+    const banner = document.getElementById('install-banner');
+    if (banner) banner.classList.add('visible');
+  });
+  document.getElementById('install-btn').addEventListener('click', async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
@@ -917,13 +1463,16 @@ function init() {
     document.getElementById('install-banner').classList.remove('visible');
     if (outcome === 'accepted') showToast('App geïnstalleerd! 🎉');
   });
-  const dismissBtn = document.getElementById('dismiss-btn');
-  if (dismissBtn) dismissBtn.addEventListener('click', () => {
+  document.getElementById('dismiss-btn').addEventListener('click', () => {
     document.getElementById('install-banner').classList.remove('visible');
   });
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  // ── Service worker ──
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
+  // ── Desktop: render panels if needed ──
+  if (isDesktop && localStorage.getItem('serietracker_configured') === '1') {
+    renderDesktopMinePanel();
   }
 }
 
