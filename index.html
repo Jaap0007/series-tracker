@@ -803,7 +803,11 @@ async function sbFetch(path, opts = {}) {
   const url = sbUrl.replace(/\/$/, '') + '/rest/v1' + path;
   const headers = { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': 'application/json', ...(opts.headers||{}) };
   const r = await fetch(url, { ...opts, headers });
-  if (!r.ok) throw new Error('Supabase ' + r.status);
+  if (!r.ok) {
+    const bodyText = await r.text().catch(() => '');
+    console.error('Supabase error', r.status, bodyText);
+    throw new Error('Supabase ' + r.status + ': ' + bodyText);
+  }
   return r.status === 204 ? null : r.json();
 }
 async function testSupabaseConnection(url, key) {
@@ -929,7 +933,6 @@ function statusBadgeHtml(status) {
 async function tmdbFetch(path, params = {}) {
   const url = new URL('https://api.themoviedb.org/3' + path);
   url.searchParams.set('api_key', TMDB_API_KEY);
-  url.searchParams.set('language', 'nl-NL');
   for (const [k,v] of Object.entries(params)) url.searchParams.set(k, v);
   const r = await fetch(url);
   if (!r.ok) throw new Error('TMDB ' + r.status);
@@ -1301,7 +1304,7 @@ async function loadSeason(id, season, containerId) {
     if (eps.length === 0) { listEl.innerHTML = `<div class="empty-state"><p>Geen afleveringen gevonden</p></div>`; return; }
     listEl.innerHTML = eps.map(ep => {
       const watched = s.watchedEps.has(ep.id);
-      const date = ep.date ? new Date(ep.date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '';
+      const date = ep.date ? new Date(ep.date).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}) : '';
       return `<div class="ep-item ${watched?'watched':''}" onclick="toggleEp('${ep.id}','${id}','${containerId}',this)" id="ep-${containerId}-${ep.id}">
         <div class="ep-check">
           <svg class="check-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="2,7 5.5,11 12,3"/></svg>
